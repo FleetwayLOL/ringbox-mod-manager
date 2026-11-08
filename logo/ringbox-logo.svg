@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <title>RingBox</title>
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9BFC7"/><stop offset="0.18" stop-color="#A3AAB3"/><stop offset="0.52" stop-color="#8C939C"/><stop offset="0.78" stop-color="#787F88"/><stop offset="1" stop-color="#61686F"/></linearGradient>
+    <linearGradient id="ring" x1=".15" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="#F2C860"/><stop offset="0.38" stop-color="#E0AE36"/><stop offset="0.72" stop-color="#C68F1E"/><stop offset="1" stop-color="#9E6E12"/></linearGradient>
+    <linearGradient id="stand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9AFB7"/><stop offset="1" stop-color="#7C838B"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2=".35" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".07"/>
+      <stop offset=".5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- стойка -->
+  <path d="M206 360 H306 L300 420 H212 Z" fill="url(#stand)"/>
+  <path d="M168 462 V444 L194 420 H318 L344 444 V462 Z" fill="url(#stand)"/>
+  <path d="M168 462 V444 L194 420 H318 L344 444 V462 Z" stroke="#464C54" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M188 434 H324" stroke="#464C54" stroke-opacity=".45" stroke-width="4"/>
+
+  <!-- корпус -->
+  <rect x="48" y="64" width="416" height="304" rx="34" fill="url(#body)"/>
+  <rect x="48" y="64" width="416" height="304" rx="34" stroke="#464C54" stroke-width="5"/>
+  <!-- светлая кромка сверху -->
+  <path d="M84 82 H428" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+  <!-- тень по низу корпуса -->
+  <path d="M74 352 H438" stroke="#464C54" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- винты по углам -->
+  <g fill="#464C54" fill-opacity=".55">
+    <circle cx="76" cy="92" r="4.5"/><circle cx="436" cy="92" r="4.5"/>
+    <circle cx="76" cy="340" r="4.5"/><circle cx="436" cy="340" r="4.5"/>
+  </g>
+
+  <!-- утопленный экран -->
+  <rect x="92" y="112" width="328" height="196" rx="16" fill="#262B32"/>
+  <rect x="92" y="112" width="328" height="196" rx="16" stroke="#464C54" stroke-opacity=".7" stroke-width="4"/>
+  <rect x="104" y="124" width="304" height="172" rx="9" fill="#15181D"/>
+  <rect x="110" y="130" width="292" height="160" rx="6" fill="#000000"/>
+
+  <!-- кольцо -->
+  <circle cx="256" cy="210" r="46" stroke="#000000" stroke-width="26"/>
+  <circle cx="256" cy="210" r="46" stroke="url(#ring)" stroke-width="22"/>
+  <circle cx="256" cy="210" r="46" stroke="#FFEFC0" stroke-opacity=".55" stroke-width="5"
+          stroke-dasharray="42 247" transform="rotate(-150 256 210)"/>
+  <circle cx="256" cy="210" r="46" stroke="#8A5D0C" stroke-opacity=".45" stroke-width="5"
+          stroke-dasharray="60 229" transform="rotate(30 256 210)"/>
+
+  <!-- блик стекла -->
+  <path d="M110 130 H402 V168 L110 244 Z" fill="url(#glass)"/>
+
+  <!-- решётка динамика под экраном -->
+  <g stroke="#464C54" stroke-opacity=".45" stroke-width="3" stroke-linecap="round">
+    <path d="M228 328 H284"/><path d="M228 338 H284"/><path d="M240 348 H272"/>
+  </g>
+
+  <!-- индикатор -->
+  <circle cx="392" cy="332" r="4.5" fill="#8CE39A" fill-opacity=".9"/>
+</svg>

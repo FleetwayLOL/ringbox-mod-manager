@@ -1,0 +1,177 @@
+========================================================
+RINGBOX — ГОТОВЫЕ ОПИСАНИЯ
+копируй как есть, менять нечего
+========================================================
+
+
+--------------------------------------------------------
+1. ОДНА СТРОКА (слоган)
+--------------------------------------------------------
+EN:  One-tap mod installs for the Sonic Mania decompilation on Android.
+RU:  Моды на декомпиляцию Sonic Mania — в один тап.
+
+
+--------------------------------------------------------
+2. GITHUB — ABOUT / DESCRIPTION
+--------------------------------------------------------
+Mod manager for the Android build of the Sonic Mania decompilation
+(RSDKv5). Browse GameBanana, install in one tap, manage load order.
+No root, no adb.
+
+Короткая версия, если не влезает:
+
+Android mod manager for the Sonic Mania decompilation (RSDKv5).
+
+Topics (через запятую):
+sonic-mania, rsdkv5, mod-manager, android, kotlin, jetpack-compose,
+decompilation, gamebanana
+
+
+--------------------------------------------------------
+3. README — АНГЛИЙСКИЙ (основной)
+--------------------------------------------------------
+# RingBox
+
+RingBox is a mod manager for the **Android build of the Sonic Mania
+decompilation** (RSDKv5 / Retro Engine). It turns this routine:
+
+1. find a mod on GameBanana
+2. download the zip
+3. figure out the folder structure
+4. extract it into `mods/` so `mod.ini` sits next to `Data/`
+5. add `TargetVersion=5` to `mod.ini` or the mod silently disables itself
+6. launch the game, open the Dev Menu, enable the mod
+7. set load priority (mods load **bottom to top**)
+
+…into a single tap.
+
+## How it works
+
+On Android, the decompilation stores its data in shared storage:
+
+```
+/storage/emulated/0/RSDK/v5/
+├── Data.rsdk        (you supply this from your own copy of the game)
+├── Settings.ini
+├── SaveData.bin
+└── mods/
+```
+
+Because that folder is *not* inside `Android/data`, RingBox can be granted
+access to it through the Storage Access Framework. That means **no root,
+no adb, no Shizuku** — just pick the `v5` folder once and it is remembered.
+
+## Features
+
+- 📚 Catalog of Sonic Mania mods straight from the GameBanana API
+- ⚡ One-tap install: download → MD5 check → unpack → `mod.ini` fix-ups
+- 🎚 Load-order management, the same bottom-to-top order the engine uses
+- 🔁 Update checks for installed mods
+- 🧹 Clean uninstall, no leftover folders
+- 🚫 No account, no telemetry, no ads
+
+## Requirements
+
+- The **decompilation** build of Sonic Mania for Android
+  (not the official Netflix release, not the Steam version)
+- Your own `Data.rsdk` from a copy of the game you legally own
+- Android 8.0+
+
+## What this is not
+
+RingBox does not contain, host or distribute any game assets or mod files.
+It does not patch the engine — it only manages the `mods/` folder. All mods
+are downloaded from GameBanana, all game files come from you.
+
+## Status
+
+Early development. Roadmap, technical notes and verified API details live
+in the `pack/` folder of this repository.
+
+## License
+
+MIT (code only; Sonic Mania and its assets belong to SEGA).
+
+
+--------------------------------------------------------
+4. README — РУССКИЙ (для 4PDA и своих)
+--------------------------------------------------------
+# RingBox
+
+Менеджер модов для **Android-билда декомпиляции Sonic Mania**
+(RSDKv5 / Retro Engine). Превращает установку мода из семи шагов
+в один тап.
+
+## Как работает
+
+Данные декомпиляции лежат в общем хранилище:
+
+```
+/storage/emulated/0/RSDK/v5/
+├── Data.rsdk        ← твой файл из купленной копии игры
+├── Settings.ini
+├── SaveData.bin
+└── mods/
+```
+
+Папка не внутри `Android/data`, поэтому приложение получает к ней
+доступ через SAF: один раз выбираешь папку `v5` — и всё.
+**Без root, без adb, без Shizuku.**
+
+## Что умеет
+
+- каталог модов с GameBanana, поиск
+- установка в один тап: скачал → сверил MD5 → распаковал →
+  дописал `TargetVersion=5`
+- управление порядком загрузки (как в движке — снизу вверх)
+- проверка обновлений, чистое удаление
+- без аккаунтов, телеметрии и рекламы
+
+## Что нужно
+
+- **декомпиляция** (не официальная версия из Netflix и не Steam-сборка)
+- свой `Data.rsdk` из легально купленной игры
+- Android 8.0+
+
+## Чего здесь нет
+
+Приложение не содержит и не раздаёт ни ассеты игры, ни файлы модов.
+Оно только наводит порядок в папке `mods/`.
+
+
+--------------------------------------------------------
+5. ПОСТ ДЛЯ РЕДДИТА / ДИСКОРДА
+--------------------------------------------------------
+Title:
+RingBox — one-tap mod installs for the Sonic Mania decomp on Android
+
+Body:
+Installing Mania mods on Android is a chore: download the zip, guess the
+folder structure, extract it into RSDK/v5/mods, add TargetVersion=5 to
+mod.ini or the mod silently disables itself, then dig into the Dev Menu and
+fix the load order.
+
+I got tired of it, so I'm building RingBox — a small mod manager that does
+all of that in one tap. It asks once for your `v5` folder (SAF, so no root
+and no adb) and then pulls mods from GameBanana directly.
+
+No game files are bundled — you still need your own Data.rsdk. No mods are
+hosted either; everything comes from GameBanana.
+
+Looking for feedback, especially from people running the decomp on Android:
+what breaks, what's missing, which mods should I test first?
+
+
+--------------------------------------------------------
+6. ЧЕГО НЕ ПИСАТЬ (ловушки)
+--------------------------------------------------------
+✗ «мобильная версия Sonic Mania» — придут люди с Netflix-версией,
+  у них ничего не заработает и они завалят негативом
+✗ «Sonic Mania Mod Manager» — уже есть Mania Mod Loader (PC),
+  будут путать и обвинять в плагиате названия
+✗ «эмулятор» — это не эмулятор, это нативный движок
+✗ «всё в одном» / «установка игры» — звучит как пиратство,
+  отпугивает и модерацию, и нормальных людей
+✓ правильно: «менеджер модов», «Android-билд декомпиляции»,
+  «свой Data.rsdk»
+========================================================

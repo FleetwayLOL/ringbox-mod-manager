@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.RingBox" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#0B1024</item>
+        <item name="android:navigationBarColor">#0D1424</item>
+        <item name="android:windowBackground">#0B1024</item>
+    </style>
+</resources>

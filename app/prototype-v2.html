@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RingBox — UI v2</title>
+<style>
+/* ============================================================
+   ПАЛИТРА: снята с зон Sonic Mania — насыщенное небо, глубокая
+   синь, кремовые панели, золото, маджента-акцент.
+   ============================================================ */
+:root{
+  --navy:#0C1338;      --ink:#070B25;
+  --blue:#1B3AA8;      --blue-d:#122878;   --blue-l:#3E68E8;
+  --sky:#5CC8F5;       --sky-d:#2E8FD8;
+  --cream:#FFF6D8;     --cream-d:#E3D3A4;
+  --gold:#FFC93C;      --gold-l:#FFE892;  --gold-d:#C07D05;
+  --grass:#37B33C;     --dirt:#B06A34;
+  --magenta:#FF2BD6;   --cyan:#43E7FF;
+  --hud: Impact, "Arial Black", "Haettenschweiler", sans-serif;
+  --pix: "Courier New", ui-monospace, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  min-height:100vh;display:grid;place-items:center;background:#05060F;
+  font-family:var(--hud);padding:18px;
+}
+/* ---------- корпус телефона ---------- */
+.phone{
+  position:relative;width:400px;height:800px;overflow:hidden;
+  border:6px solid #000;box-shadow:0 0 0 6px #1A1F3D, 0 24px 0 -6px #060912, 0 40px 80px #000;
+  background:var(--blue);display:flex;flex-direction:column;
+}
+/* ---------- фон: шахматка Грин-Хилла + скан ---------- */
+.sky{position:absolute;inset:0;z-index:0;overflow:hidden;background:
+  linear-gradient(#6FD4F7 0%, #3E9FE0 34%, var(--blue) 78%, var(--blue-d) 100%);}
+.checker{
+  position:absolute;left:-96px;right:-96px;top:-96px;bottom:-96px;
+  background-image:linear-gradient(45deg, rgba(12,19,56,.30) 25%, transparent 25%, transparent 75%, rgba(12,19,56,.30) 75%),
+                   linear-gradient(45deg, rgba(12,19,56,.30) 25%, transparent 25%, transparent 75%, rgba(12,19,56,.30) 75%);
+  background-size:64px 64px;background-position:0 0, 32px 32px;
+  animation:chk 24s linear infinite;
+}
+@keyframes chk{to{background-position:64px 64px, 96px 96px}}
+.scan{position:absolute;inset:0;pointer-events:none;opacity:.22;
+  background:repeating-linear-gradient(180deg, rgba(0,0,0,.55) 0 2px, transparent 2px 4px);}
+.vig{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(6,10,40,.55);}
+
+/* ---------- HUD сверху ---------- */
+.hud{
+  position:relative;z-index:3;display:flex;align-items:center;gap:9px;
+  padding:14px 14px 10px;
+}
+.logo{width:52px;height:52px;filter:drop-shadow(3px 3px 0 rgba(6,10,40,.7))}
+.brand{
+  font-size:27px;font-style:italic;letter-spacing:.5px;line-height:1;color:var(--gold);
+  text-shadow:3px 0 0 var(--ink),-3px 0 0 var(--ink),0 3px 0 var(--ink),0 -3px 0 var(--ink),
+              3px 3px 0 var(--ink),-3px -3px 0 var(--ink),3px -3px 0 var(--ink),-3px 3px 0 var(--ink),
+              5px 6px 0 rgba(6,10,40,.75);
+  transform:skewX(-6deg);
+}
+.hud-right{margin-left:auto;display:flex;align-items:center;gap:7px;
+  background:rgba(7,11,37,.62);border:3px solid var(--ink);padding:4px 10px 4px 7px;
+  box-shadow:3px 3px 0 rgba(6,10,40,.6)}
+.ring{width:19px;height:19px;border-radius:50%;flex:0 0 auto;
+  background:radial-gradient(circle at 50% 50%,
+      transparent 0 31%,
+      #6B4400 31% 40%,
+      #FFF3B4 40% 46%,
+      var(--gold) 46% 72%,
+      #E09A10 72% 88%,
+      #A85F03 88% 100%);
+  animation:spin 1.15s ease-in-out infinite}
+.bigring{width:104px;height:104px;border-radius:50%;animation:spin 2.4s ease-in-out infinite;
+  background:radial-gradient(circle at 50% 50%,
+      transparent 0 30%, #6B4400 30% 39%, #FFF6C0 39% 45%,
+      var(--gold) 45% 70%, #E09A10 70% 86%, #A85F03 86% 100%);
+  filter:drop-shadow(4px 5px 0 rgba(6,10,40,.65))}
+@keyframes spin{
+  0%{transform:scaleX(1)}  38%{transform:scaleX(.12)}
+  50%{transform:scaleX(.12)} 88%{transform:scaleX(1)} 100%{transform:scaleX(1)}}
+.num{font-family:var(--pix);font-weight:700;font-size:17px;color:#fff;
+  text-shadow:2px 2px 0 var(--ink);letter-spacing:1px}
+
+/* ---------- контент ---------- */
+.screen{position:relative;z-index:2;flex:1;overflow-y:auto;padding:4px 14px 12px;display:none}
+.screen.on{display:block}
+.screen::-webkit-scrollbar{width:0}
+
+/* панель — «кремовая плита» из меню Мании */
+.plate{background:var(--cream);border:4px solid var(--ink);
+  box-shadow:6px 6px 0 rgba(6,10,40,.8), inset 0 0 0 3px #fff, inset 0 -6px 0 var(--cream-d);}
+.plate-h{background:linear-gradient(var(--gold-l), var(--gold) 60%, #F0A81B);
+  border-bottom:4px solid var(--ink);padding:6px 10px;display:flex;align-items:center;gap:8px}
+.plate-h .ring{animation:none}
+.plate-h b{font-size:15px;font-style:italic;color:var(--ink);letter-spacing:.8px;transform:skewX(-6deg)}
+.plate-b{padding:12px}
+
+/* поле поиска */
+.search{display:flex;align-items:center;gap:8px;background:#0B1230;border:4px solid var(--ink);
+  box-shadow:inset 0 4px 0 rgba(0,0,0,.5), 4px 4px 0 rgba(6,10,40,.7);padding:9px 11px;margin-bottom:12px}
+.search input{flex:1;background:none;border:0;outline:0;color:var(--cyan);font-family:var(--pix);
+  font-size:14px;font-weight:700;letter-spacing:1px}
+.search input::placeholder{color:#4D6BA8}
+.caret{width:9px;height:16px;background:var(--cyan);animation:blink2 1s steps(1) infinite}
+@keyframes blink2{50%{opacity:0}}
+
+/* чипсы-фильтры */
+.chips{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap}
+.chip{flex:0 0 auto;font-size:11.5px;font-style:italic;letter-spacing:.6px;padding:5px 11px;
+  background:#16307E;color:#9FC0FF;border:3px solid var(--ink);box-shadow:3px 3px 0 rgba(6,10,40,.6);
+  cursor:pointer;transform:skewX(-6deg);transition:.06s}
+.chip.sel{background:var(--gold);color:var(--ink);box-shadow:3px 3px 0 rgba(6,10,40,.6), inset 0 -3px 0 var(--gold-d)}
+.chip:active{transform:skewX(-6deg) translate(2px,2px)}
+
+/* карточка мода */
+.mod{display:flex;gap:11px;padding:9px;margin-bottom:11px;
+  background:linear-gradient(#1B3AA8, #142C82);border:4px solid var(--ink);
+  box-shadow:5px 5px 0 rgba(6,10,40,.7), inset 0 3px 0 rgba(255,255,255,.16);cursor:pointer}
+.mod:active{transform:translate(2px,2px);box-shadow:3px 3px 0 rgba(6,10,40,.7)}
+.thumb{width:64px;height:64px;flex:0 0 64px;border:3px solid var(--ink);position:relative;overflow:hidden;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.thumb i{position:absolute;inset:0;background-size:12px 12px;opacity:.16;
+  background-image:linear-gradient(45deg,#000 25%,transparent 25%,transparent 75%,#000 75%),
+                   linear-gradient(45deg,#000 25%,transparent 25%,transparent 75%,#000 75%);
+  background-position:0 0,6px 6px}
+.thumb b{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:italic;
+  color:#fff;text-shadow:3px 0 0 var(--ink),-3px 0 0 var(--ink),0 3px 0 var(--ink),0 -3px 0 var(--ink),
+              3px 3px 0 var(--ink),-3px -3px 0 var(--ink),3px -3px 0 var(--ink),-3px 3px 0 var(--ink)}
+.t1{background:linear-gradient(#3AC6F0,#134E9E)}
+.t2{background:linear-gradient(#58E06A,#0E7A2A)}
+.t3{background:linear-gradient(#FF9F2E,#B32E0A)}
+.t4{background:linear-gradient(#C77BFF,#4320A8)}
+.mod-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.mod-title{font-size:15px;font-style:italic;color:#fff;letter-spacing:.4px;line-height:1.05;
+  text-shadow:2px 2px 0 var(--ink)}
+.mod-meta{font-family:var(--pix);font-size:10.5px;color:#8FB3F0;letter-spacing:.5px}
+.mod-meta span{color:var(--gold)}
+.badge{align-self:flex-start;font-size:9.5px;letter-spacing:1px;padding:2px 6px;background:var(--magenta);
+  color:#1A0022;border:2px solid var(--ink);font-style:italic}
+.badge.ok{background:var(--grass);color:#04220A}
+
+/* кнопки */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;
+  font-family:var(--hud);font-size:14px;font-style:italic;letter-spacing:1px;color:var(--ink);
+  padding:9px 15px;border:4px solid var(--ink);transform:skewX(-6deg);
+  background:linear-gradient(var(--gold-l), var(--gold) 52%, #EFA312);
+  box-shadow:inset 0 4px 0 #FFF8CE, inset 0 -7px 0 var(--gold-d), 5px 5px 0 rgba(6,10,40,.8);}
+.btn:active{transform:skewX(-6deg) translate(3px,3px);box-shadow:inset 0 3px 0 #FFF8CE, inset 0 -5px 0 var(--gold-d), 2px 2px 0 rgba(6,10,40,.8)}
+.btn.ghost{background:linear-gradient(#3E68E8,#1B3AA8);color:#DDE9FF;
+  box-shadow:inset 0 4px 0 rgba(255,255,255,.28), inset 0 -7px 0 #0C1E60, 5px 5px 0 rgba(6,10,40,.8)}
+.btn.wide{width:100%}
+
+/* строка «папка» */
+.row{display:flex;justify-content:space-between;gap:10px;font-family:var(--pix);font-size:12px;
+  color:#3A2A00;padding:5px 0;border-bottom:2px dashed rgba(12,19,56,.22)}
+.row:last-child{border:0}
+.row b{color:#0C1338;font-weight:700}
+
+/* переключатель в духе Мании */
+.sw{width:52px;height:26px;border:3px solid var(--ink);background:#22112E;position:relative;cursor:pointer;
+  box-shadow:inset 0 3px 0 rgba(0,0,0,.5)}
+.sw i{position:absolute;top:1px;left:1px;width:20px;height:18px;background:#6C7FA8;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.45);transition:.08s}
+.sw.on{background:#0C3A12}
+.sw.on i{left:25px;background:linear-gradient(#B6FF9E,#37B33C);}
+
+/* нижние табы */
+.tabs{position:relative;z-index:3;display:flex;gap:7px;padding:10px 12px 14px;
+  background:linear-gradient(rgba(7,11,37,0), rgba(7,11,37,.9) 40%)}
+.tab{flex:1;text-align:center;padding:9px 4px 8px;cursor:pointer;font-size:11.5px;font-style:italic;
+  letter-spacing:.7px;color:#8FB3F0;background:#122878;border:4px solid var(--ink);transform:skewX(-6deg);
+  box-shadow:4px 4px 0 rgba(6,10,40,.7), inset 0 3px 0 rgba(255,255,255,.12)}
+.tab.on{color:var(--ink);background:linear-gradient(var(--gold-l),var(--gold) 55%,#EFA312);
+  box-shadow:4px 4px 0 rgba(6,10,40,.7), inset 0 3px 0 #FFF8CE, inset 0 -5px 0 var(--gold-d)}
+.tab span{display:block;transform:skewX(6deg)}
+
+/* ---------- модалка установки ---------- */
+.modal{position:absolute;inset:0;z-index:9;display:none;place-items:center;
+  background:rgba(4,7,26,.78);backdrop-filter:blur(2px)}
+.modal.on{display:grid}
+.mbox{width:330px;background:var(--cream);border:5px solid var(--ink);
+  box-shadow:8px 8px 0 rgba(0,0,0,.7), inset 0 0 0 4px #fff, inset 0 -8px 0 var(--cream-d)}
+.mhead{background:linear-gradient(var(--gold-l),var(--gold) 55%,#EFA312);border-bottom:4px solid var(--ink);
+  padding:9px 12px;display:flex;align-items:center;gap:9px}
+.mhead b{font-size:16px;font-style:italic;color:var(--ink);transform:skewX(-6deg);letter-spacing:.5px}
+.mbody{padding:14px}
+.step{display:flex;align-items:center;gap:9px;font-family:var(--pix);font-size:11.5px;color:#4A3A10;
+  padding:4px 0;letter-spacing:.4px}
+.step .dot{width:17px;height:17px;flex:0 0 17px;border:3px solid var(--ink);background:#D9CBA0;
+  display:grid;place-items:center;font-size:10px;color:#fff;font-family:var(--pix)}
+.step.act .dot{background:var(--gold);animation:pulse 1s infinite}
+.step.done .dot{background:var(--grass)}
+.step.done{color:#0C1338;font-weight:700}
+@keyframes pulse{50%{background:#FFF3B0}}
+.bar{display:flex;gap:3px;margin-top:14px}
+.bar i{flex:1;height:15px;background:#2A1A08;border:2px solid var(--ink)}
+.bar i.f{background:linear-gradient(var(--gold-l),var(--gold) 50%,#E09A10)}
+.bar i.now{background:var(--magenta);animation:pulse2 .35s infinite alternate}
+@keyframes pulse2{to{background:#FFA6EE}}
+.speedlines{position:absolute;left:50%;top:50%;width:520px;height:520px;margin:-260px 0 0 -260px;
+  pointer-events:none;opacity:.22;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.5) 0 1.5deg, transparent 1.5deg 11deg);
+  mask-image:radial-gradient(circle, transparent 42%, #000 62%);
+  -webkit-mask-image:radial-gradient(circle, transparent 42%, #000 62%);
+  animation:spin2 14s linear infinite}
+@keyframes spin2{to{transform:rotate(360deg)}}
+
+/* тост */
+.toast{position:absolute;left:50%;bottom:96px;transform:translate(-50%,20px);z-index:12;
+  background:#0B1230;border:4px solid var(--gold);color:var(--gold-l);font-family:var(--pix);
+  font-size:11.5px;font-weight:700;letter-spacing:1px;padding:9px 15px;opacity:0;
+  box-shadow:4px 4px 0 rgba(0,0,0,.7);transition:.18s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hint{font-family:var(--pix);font-size:10px;color:#8FB3F0;letter-spacing:.6px;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="sky"><div class="checker"></div><div class="scan"></div><div class="vig"></div></div>
+
+  <!-- ===== HUD ===== -->
+  <div class="hud">
+    <svg class="logo" viewBox="0 0 512 512" aria-label="RingBox">
+      <defs>
+        <linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF"/><stop offset=".14" stop-color="#E8F2FB"/><stop offset=".46" stop-color="#B4C7DA"/><stop offset=".72" stop-color="#8CA2BA"/><stop offset="1" stop-color="#5E7288"/></linearGradient>
+        <linearGradient id="ms" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C92AA"/><stop offset="1" stop-color="#43556B"/></linearGradient>
+        <linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C7BD0"/><stop offset=".35" stop-color="#4FA8EA"/><stop offset=".72" stop-color="#8FE0FA"/><stop offset="1" stop-color="#BFF2FF"/></linearGradient>
+        <linearGradient id="g" x1=".25" y1="0" x2=".75" y2="1"><stop offset="0" stop-color="#FFF7C2"/><stop offset=".32" stop-color="#FFD23F"/><stop offset=".7" stop-color="#E29A12"/><stop offset="1" stop-color="#A85F03"/></linearGradient>
+        <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7BE06A"/><stop offset=".35" stop-color="#2FB63C"/><stop offset="1" stop-color="#177A26"/></linearGradient>
+      </defs>
+      <path d="M150 468 V446 L186 414 H326 L362 446 V468 Z" fill="url(#m)" stroke="#0A1122" stroke-width="18"/>
+      <path d="M196 356 H316 L302 428 H210 Z" fill="url(#ms)" stroke="#0A1122" stroke-width="18"/>
+      <path d="M92 66 H420 L446 92 V352 L420 378 H92 L66 352 V92 Z" fill="url(#m)" stroke="#0A1122" stroke-width="20"/>
+      <path d="M100 94 H412" stroke="#FFF" stroke-width="12"/>
+      <rect x="92" y="120" width="328" height="216" rx="10" fill="#16203A" stroke="#0A1122" stroke-width="12"/>
+      <rect x="108" y="136" width="296" height="192" rx="6" fill="none" stroke="#FF3FD0" stroke-width="5"/>
+      <rect x="112" y="140" width="288" height="184" rx="4" fill="url(#sk)"/>
+      <rect x="112" y="276" width="288" height="24" fill="url(#gr)"/>
+      <rect x="112" y="300" width="288" height="24" fill="#8C4F22"/>
+      <g fill="#B06A34"><rect x="125" y="300" width="13" height="12"/><rect x="151" y="300" width="13" height="12"/><rect x="177" y="300" width="13" height="12"/><rect x="203" y="300" width="13" height="12"/><rect x="229" y="300" width="13" height="12"/><rect x="255" y="300" width="13" height="12"/><rect x="281" y="300" width="13" height="12"/><rect x="307" y="300" width="13" height="12"/><rect x="333" y="300" width="13" height="12"/><rect x="359" y="300" width="13" height="12"/><rect x="112" y="312" width="13" height="12"/><rect x="138" y="312" width="13" height="12"/><rect x="164" y="312" width="13" height="12"/><rect x="190" y="312" width="13" height="12"/><rect x="216" y="312" width="13" height="12"/><rect x="242" y="312" width="13" height="12"/><rect x="268" y="312" width="13" height="12"/><rect x="294" y="312" width="13" height="12"/><rect x="320" y="312" width="13" height="12"/><rect x="346" y="312" width="13" height="12"/><rect x="372" y="312" width="13" height="12"/></g>
+      <circle cx="256" cy="216" r="42" stroke="#0F1B3E" stroke-width="40" fill="none"/>
+      <circle cx="256" cy="216" r="42" stroke="url(#g)" stroke-width="27" fill="none"/>
+      <circle cx="256" cy="216" r="42" stroke="#FFFBDE" stroke-width="8" fill="none" stroke-dasharray="46 218" transform="rotate(-158 256 216)"/>
+      <rect x="112" y="140" width="288" height="184" rx="4" fill="none" stroke="#0A1122" stroke-width="9"/>
+    </svg>
+    <div class="brand">RingBox</div>
+    <div class="hud-right"><span class="ring"></span><span class="num" id="ringCount">06</span></div>
+  </div>
+
+  <!-- ===== ЭКРАН: КАТАЛОГ ===== -->
+  <div class="screen on" id="s-cat">
+    <div class="search">
+      <span class="caret"></span>
+      <input id="q" placeholder="ПОИСК МОДА...">
+      <span class="num" style="color:#4D6BA8">/</span>
+    </div>
+    <div class="chips">
+      <div class="chip sel">ВСЁ</div>
+      <div class="chip">ГЕЙМПЛЕЙ</div>
+      <div class="chip">СКИНЫ</div>
+      <div class="chip">МУЗЫКА</div>
+    </div>
+    <div id="modList"></div>
+    <div class="hint">GAMEBANANA · SONIC MANIA · 1423 МОДА</div>
+  </div>
+
+  <!-- ===== ЭКРАН: МОИ МОДЫ ===== -->
+  <div class="screen" id="s-mine">
+    <div class="plate" style="margin-bottom:13px">
+      <div class="plate-h"><span class="ring" style="width:15px;height:15px"></span><b>ПОРЯДОК ЗАГРУЗКИ</b></div>
+      <div class="plate-b" style="padding:10px">
+        <div class="hint" style="text-align:left;margin:0;color:#6A5520">ДВИЖОК ЧИТАЕТ mods/ СНИЗУ ВВЕРХ</div>
+      </div>
+    </div>
+    <div id="myList"></div>
+  </div>
+
+  <!-- ===== ЭКРАН: ПАПКА ===== -->
+  <div class="screen" id="s-folder">
+    <div class="plate" style="margin-bottom:13px">
+      <div class="plate-h"><b>ПАПКА ИГРЫ</b></div>
+      <div class="plate-b">
+        <div class="row"><span>ПУТЬ</span><b id="fPath">RSDK/v5</b></div>
+        <div class="row"><span>Data.rsdk</span><b id="fRsdk" style="color:#1D7A2E">НАЙДЕН</b></div>
+        <div class="row"><span>ДОСТУП</span><b>ПОЛНЫЙ</b></div>
+        <div style="margin-top:13px"><div class="btn wide" id="pickBtn">УКАЗАТЬ ПАПКУ</div></div>
+      </div>
+    </div>
+    <div class="plate">
+      <div class="plate-h"><b>СОСТОЯНИЕ</b></div>
+      <div class="plate-b">
+        <div class="row"><span>УСТАНОВЛЕНО МОДОВ</span><b id="fCount">6</b></div>
+        <div class="row"><span>ЗАНЯТО</span><b>18.4 МБ</b></div>
+        <div class="row"><span>СЕЙВЫ</span><b>3</b></div>
+      </div>
+    </div>
+    <div style="display:grid;place-items:center;gap:14px;margin-top:34px">
+      <div class="bigring"></div>
+      <div class="hint" style="margin:0;color:#CFE4FF">ПАПКА ГОТОВА · МОЖНО СТАВИТЬ МОДЫ</div>
+    </div>
+  </div>
+
+  <!-- ===== ТАБЫ ===== -->
+  <div class="tabs">
+    <div class="tab on" data-s="cat"><span>КАТАЛОГ</span></div>
+    <div class="tab" data-s="mine"><span>МОИ</span></div>
+    <div class="tab" data-s="folder"><span>ПАПКА</span></div>
+  </div>
+
+  <!-- ===== МОДАЛКА УСТАНОВКИ ===== -->
+  <div class="modal" id="modal">
+    <div style="position:relative">
+      <div class="speedlines"></div>
+      <div class="mbox">
+        <div class="mhead"><span class="ring" style="width:20px;height:20px"></span><b id="mTitle">УСТАНОВКА</b></div>
+        <div class="mbody">
+          <div id="steps"></div>
+          <div class="bar" id="bar"></div>
+          <div style="margin-top:14px"><div class="btn wide" id="closeBtn" style="opacity:.35">ЗАКРЫТЬ</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">ГОТОВО</div>
+</div>
+
+<script>
+const MODS = [
+  {id:1, t:"Randomizer",            a:"Soryn",       d:"48.2K", c:1, b:""},
+  {id:2, t:"Marble Zone Reheated",  a:"PixelMania",  d:"12.7K", c:3, b:"NEW"},
+  {id:3, t:"HYPERMANIA",            a:"HyperSonic",  d:"31.0K", c:4, b:""},
+  {id:4, t:"Modern Amy",            a:"AmyRoseMods", d:"9.4K",  c:2, b:""},
+  {id:5, t:"Green Hill Complete",   a:"ZonesTeam",   d:"22.1K", c:2, b:"HOT"},
+  {id:6, t:"Signpost Icons",        a:"SmallMods",   d:"3.8K",  c:3, b:""},
+];
+let installed = [1,3,4,5,6,2];
+
+const list = document.getElementById('modList');
+function modNode(m){
+  const el = document.createElement('mod'.replace('mod','div'));
+  el.className = 'mod';
+  el.innerHTML = `
+    <div class="thumb t${m.c}"><i></i><b>${m.t[0]}</b></div>
+    <div class="mod-info">
+      <div class="mod-title">${m.t}</div>
+      <div class="mod-meta">${m.a.toUpperCase()} · <span>${m.d}</span> ЗАГРУЗОК</div>
+      ${m.b ? `<div class="badge">${m.b}</div>` : ''}
+    </div>
+    <div style="display:grid;place-items:center">
+      <div class="btn" style="padding:8px 9px;font-size:10.5px;letter-spacing:.5px">СТАВИТЬ</div>
+    </div>`;
+  el.onclick = () => openInstall(m.t);
+  return el;
+}
+MODS.forEach(m => list.appendChild(modNode(m)));
+
+// табы
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById('s-' + t.dataset.s).classList.add('on');
+});
+// чипсы
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => {
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('sel'));
+  c.classList.add('sel');
+});
+// мои моды
+const myList = document.getElementById('myList');
+function renderMine(){
+  myList.innerHTML = '';
+  MODS.forEach((m,i) => {
+    if(!installed.includes(m.id)) return;
+    const el = document.createElement('div');
+    el.className = 'mod';
+    el.innerHTML = `
+      <div class="thumb t${m.c}"><i></i><b>${m.t[0]}</b></div>
+      <div class="mod-info">
+        <div class="mod-title">${m.t}</div>
+        <div class="mod-meta">${m.a.toUpperCase()}</div>
+      </div>
+      <div class="sw on"><i></i></div>`;
+    el.querySelector('.sw').onclick = e => { e.stopPropagation(); e.currentTarget.classList.toggle('on'); toast('ПЕРЕКЛЮЧЕНО'); };
+    myList.appendChild(el);
+  });
+}
+renderMine();
+
+// установка
+const STEPS = ["ПРОВЕРКА ПАПКИ","СКАЧИВАНИЕ АРХИВА","РАСПАКОВКА В mods/","ПРОВЕРКА mod.ini","ГОТОВО"];
+let timer = null;
+function openInstall(name){
+  const modal = document.getElementById('modal');
+  document.getElementById('mTitle').textContent = name.toUpperCase();
+  const steps = document.getElementById('steps'), bar = document.getElementById('bar');
+  steps.innerHTML = STEPS.map((s,i) => `<div class="step" data-i="${i}"><div class="dot"></div>${s}</div>`).join('');
+  bar.innerHTML = Array.from({length:18}, () => '<i></i>').join('');
+  document.getElementById('closeBtn').style.opacity = .35;
+  modal.classList.add('on');
+
+  let i = 0, seg = 0;
+  clearInterval(timer);
+  timer = setInterval(() => {
+    const nodes = steps.querySelectorAll('.step');
+    nodes.forEach(n => n.classList.remove('act'));
+    if(i > 0){ nodes[i-1].classList.add('done'); nodes[i-1].querySelector('.dot').textContent = '✓'; }
+    if(i < STEPS.length){
+      nodes[i].classList.add('act');
+      const cells = bar.querySelectorAll('i');
+      for(let k=0;k<2;k++){ if(seg < cells.length){ cells[seg].className = 'f'; seg++; } }
+    }
+    i++;
+    if(i > STEPS.length){
+      clearInterval(timer);
+      const cells = bar.querySelectorAll('i');
+      cells.forEach(c => c.className = 'f');
+      document.getElementById('closeBtn').style.opacity = 1;
+      toast('МОД УСТАНОВЛЕН');
+      bumpRing();
+    }
+  }, 520);
+}
+document.getElementById('closeBtn').onclick = () => document.getElementById('modal').classList.remove('on');
+document.getElementById('pickBtn').onclick = () => toast('ВЫБОР ПАПКИ (SAF)');
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 1600);
+}
+function bumpRing(){
+  const el = document.getElementById('ringCount');
+  let n = parseInt(el.textContent, 10) + 1;
+  el.textContent = String(n).padStart(2,'0');
+}
+</script>
+</body>
+</html>

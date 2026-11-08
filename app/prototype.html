@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RingBox — прототип в стиле Sonic Mania</title>
+<!--
+  ДИЗАЙН-ТОКЕНЫ (переносить в Compose один в один)
+  sky        #4aa9e0   небо
+  deep       #10356b   глубокая синь
+  night      #0b1024   фон приложения
+  gold       #ffd23f   кольцо / акцент
+  gold_dark  #c07d05   тень золота
+  metal      #c8d4e0   рамка item box
+  metal_dark #6b7f96
+  outline    #10182a   чёрный контур (3px)
+  grass      #3fbf3f
+  dirt1      #b06a34   шахматка
+  dirt2      #8c4f22
+  neon       #ff2bd6
+  ------------------------------------------------------
+  Правила стиля:
+   • любой блок = контур 3px + внутренний блик сверху + тень снизу
+   • скруглений нет: углы либо прямые, либо срезаны на 1 шаг
+   • текст только капсом, monospace, с разрядкой
+   • золото = действие, металл = контейнер, шахматка = фон
+-->
+<style>
+  :root{
+    --sky:#4aa9e0; --deep:#10356b; --night:#0b1024;
+    --gold:#ffd23f; --gold-dark:#c07d05; --gold-hi:#fff3b0;
+    --metal:#c8d4e0; --metal-dark:#6b7f96; --metal-hi:#eef4fa;
+    --outline:#10182a; --grass:#3fbf3f; --dirt1:#b06a34; --dirt2:#8c4f22;
+    --neon:#ff2bd6; --ok:#3fbf3f; --bad:#e03b3b;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  body{
+    margin:0; min-height:100vh; display:grid; place-items:center;
+    background:#05070f;
+    background-image:
+      radial-gradient(circle at 20% 10%, #1b1050 0%, transparent 55%),
+      radial-gradient(circle at 85% 80%, #3a0b36 0%, transparent 60%);
+    font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color:#e9ecf5; padding:18px;
+  }
+
+  /* ---------- телефон ---------- */
+  .phone{
+    width:392px; height:812px; position:relative;
+    background:var(--night); border:4px solid #000; border-radius:26px;
+    box-shadow:0 0 0 3px #23283d, 0 26px 60px rgba(0,0,0,.75);
+    overflow:hidden; display:flex; flex-direction:column;
+  }
+  .notch{
+    height:26px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 14px; font-size:10px; color:#8a93ad; letter-spacing:.1em;
+    background:#070a14; border-bottom:2px solid #000;
+  }
+
+  /* ---------- шапка ---------- */
+  header{
+    position:relative; padding:12px 14px 10px; background:var(--deep);
+    border-bottom:3px solid var(--outline); overflow:hidden;
+  }
+  header::after{ /* шахматная полоса как в Зелёных холмах */
+    content:""; position:absolute; left:0; right:0; bottom:0; height:10px;
+    background-image:
+      linear-gradient(45deg, var(--dirt2) 25%, transparent 25%, transparent 75%, var(--dirt2) 75%),
+      linear-gradient(45deg, var(--dirt2) 25%, var(--dirt1) 25%, var(--dirt1) 75%, var(--dirt2) 75%);
+    background-size:10px 10px; background-position:0 0, 5px 5px;
+    border-top:2px solid var(--outline);
+  }
+  .brand{display:flex; align-items:center; gap:10px}
+  .brand img{width:38px; height:38px; image-rendering:pixelated;
+             border:3px solid var(--outline); border-radius:8px}
+  .brand .t{font-size:17px; font-weight:800; letter-spacing:.06em; color:#fff;
+            text-shadow:2px 2px 0 var(--outline)}
+  .brand .s{font-size:9px; color:#9fb6d6; letter-spacing:.16em; margin-top:2px}
+  .rings{margin-left:auto; display:flex; align-items:center; gap:6px;
+         background:#0c2a52; border:3px solid var(--outline); padding:3px 8px;
+         font-size:12px; font-weight:700; color:var(--gold)}
+  .rings svg{width:14px; height:14px; image-rendering:pixelated}
+
+  /* ---------- контент ---------- */
+  main{flex:1; overflow-y:auto; padding:14px 14px 16px; position:relative}
+  main::-webkit-scrollbar{width:0}
+  .screen{display:none}
+  .screen.on{display:block}
+
+  h2{font-size:12px; letter-spacing:.14em; color:#8fa8c8; margin:0 0 10px; font-weight:700}
+
+  /* металлическая панель */
+  .panel{
+    background:linear-gradient(180deg,#1a2440,#141c33);
+    border:3px solid var(--outline);
+    box-shadow:inset 0 3px 0 #2b3a5e, inset 0 -3px 0 #080d1a;
+    padding:12px; margin-bottom:12px;
+  }
+  .panel.metal{
+    background:linear-gradient(180deg,#dbe5f0,var(--metal) 40%,#a9b9cc);
+    color:#0d1626; border-color:var(--outline);
+    box-shadow:inset 0 3px 0 var(--metal-hi), inset 0 -4px 0 var(--metal-dark);
+  }
+
+  /* путь папки */
+  .path{font-size:11px; word-break:break-all; line-height:1.6; color:#0d1626}
+  .path b{color:#0a4a12}
+  .check{display:flex; align-items:center; gap:6px; font-size:11px; margin-top:8px;
+         color:#0a4a12; font-weight:700}
+  .check .dot{width:10px; height:10px; background:var(--ok); border:2px solid var(--outline)}
+
+  /* кнопки */
+  .btn{
+    display:block; width:100%; padding:13px 14px; margin-top:10px;
+    background:var(--gold); color:#141b2b; border:3px solid var(--outline);
+    box-shadow:inset 0 -5px 0 var(--gold-dark), inset 0 3px 0 var(--gold-hi);
+    font:800 13px/1 ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase;
+    cursor:pointer; text-align:center;
+  }
+  .btn:active{transform:translateY(3px);
+    box-shadow:inset 0 -2px 0 var(--gold-dark), inset 0 2px 0 var(--gold-hi)}
+  .btn.ghost{
+    background:#20304f; color:#cfe0f5; box-shadow:inset 0 -5px 0 #101a2e, inset 0 3px 0 #33456b;
+  }
+  .btn.ghost:active{box-shadow:inset 0 -2px 0 #101a2e, inset 0 2px 0 #33456b}
+  .btn.small{width:auto; padding:8px 12px; font-size:11px; margin:0}
+  .btn:disabled{filter:grayscale(.6) brightness(.75); cursor:default}
+
+  /* поиск */
+  .search{display:flex; gap:8px; margin-bottom:12px}
+  .search input{
+    flex:1; background:#0c1428; border:3px solid var(--outline); color:#e9ecf5;
+    padding:11px 12px; font:600 12px/1 ui-monospace,monospace; letter-spacing:.04em;
+    box-shadow:inset 0 3px 0 #050a16;
+  }
+  .search input::placeholder{color:#5d6b88}
+  .search input:focus{outline:none; border-color:var(--gold)}
+
+  /* карточки модов */
+  .mod{
+    display:flex; gap:10px; align-items:center; padding:10px; margin-bottom:10px;
+    background:#141c33; border:3px solid var(--outline);
+    box-shadow:inset 0 3px 0 #22304f, inset 0 -3px 0 #080d1a;
+  }
+  .thumb{
+    width:56px; height:56px; flex:0 0 auto; position:relative;
+    border:3px solid var(--outline); image-rendering:pixelated;
+    display:grid; place-items:center; background:#0d1526;
+  }
+  .thumb i{display:block; width:26px; height:22px; position:relative}
+  .thumb i::before{ /* мониторчик */
+    content:""; position:absolute; inset:0 0 5px 0; background:var(--metal);
+    border:2px solid var(--outline);
+    box-shadow:inset 0 -3px 0 var(--metal-dark);
+  }
+  .thumb i::after{ /* кольцо */
+    content:""; position:absolute; left:7px; top:4px; width:12px; height:12px;
+    border:3px solid var(--gold); border-radius:50%;
+  }
+  .meta{flex:1; min-width:0}
+  .meta .n{font-size:12px; font-weight:700; color:#eef3fb; line-height:1.3}
+  .meta .a{font-size:10px; color:#7d8aa8; margin-top:3px}
+  .meta .d{font-size:10px; color:#5f6d8b; margin-top:4px; letter-spacing:.04em}
+  .act{display:flex; flex-direction:column; gap:6px; align-items:flex-end}
+
+  /* список установленных */
+  .row{
+    display:flex; align-items:center; gap:10px; padding:10px; margin-bottom:8px;
+    background:#141c33; border:3px solid var(--outline);
+    box-shadow:inset 0 3px 0 #22304f, inset 0 -3px 0 #080d1a;
+  }
+  .row.off{opacity:.55}
+  .num{width:20px; text-align:center; font-size:11px; color:#7d8aa8}
+  .switch{
+    width:44px; height:24px; flex:0 0 auto; background:#0c1428;
+    border:3px solid var(--outline); position:relative; cursor:pointer;
+    box-shadow:inset 0 3px 0 #050a16;
+  }
+  .switch b{position:absolute; top:0; left:0; width:18px; height:100%;
+            background:#5d6b88; border-right:2px solid var(--outline)}
+  .switch.on{background:#1d5c2a}
+  .switch.on b{left:auto; right:0; border-right:0; border-left:2px solid var(--outline);
+               background:var(--grass)}
+  .move{display:flex; flex-direction:column; gap:3px}
+  .move button{
+    width:22px; height:17px; background:var(--metal); border:2px solid var(--outline);
+    color:#0d1626; font:700 9px/1 monospace; cursor:pointer; padding:0;
+  }
+  .move button:active{transform:translateY(1px)}
+  .del{background:#3a1622; border:2px solid var(--outline); color:#ff8f9e;
+       font:700 10px/1 monospace; padding:6px 7px; cursor:pointer}
+
+  .hint{font-size:10px; color:#6b7794; line-height:1.6; margin-top:10px}
+  .empty{text-align:center; padding:34px 10px; color:#6b7794; font-size:11px; line-height:1.8}
+  .empty .big{font-size:26px; display:block; margin-bottom:10px; color:var(--gold)}
+
+  /* ---------- нижняя навигация ---------- */
+  nav{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+    border-top:3px solid var(--outline); background:#0d1424;
+  }
+  nav button{
+    padding:11px 4px 12px; background:transparent; border:0; border-right:2px solid #060a12;
+    color:#66748f; font:700 9px/1.4 ui-monospace,monospace; letter-spacing:.1em;
+    text-transform:uppercase; cursor:pointer;
+  }
+  nav button:last-child{border-right:0}
+  nav button.on{color:var(--gold); background:#131d33;
+    box-shadow:inset 0 3px 0 var(--gold-dark)}
+  nav .ico{display:block; font-size:16px; margin-bottom:5px}
+
+  /* ---------- модалка установки ---------- */
+  .sheet{
+    position:absolute; inset:0; background:rgba(4,7,15,.86);
+    display:none; align-items:center; justify-content:center; padding:18px; z-index:20;
+  }
+  .sheet.on{display:flex}
+  .box{
+    width:100%; background:#141c33; border:3px solid var(--outline);
+    box-shadow:inset 0 3px 0 #22304f, inset 0 -3px 0 #080d1a, 0 20px 50px rgba(0,0,0,.6);
+    padding:16px;
+  }
+  .box h3{margin:0 0 4px; font-size:13px; letter-spacing:.06em; color:#fff}
+  .box .sub{font-size:10px; color:#7d8aa8; margin-bottom:14px}
+  .steps{font-size:11px; line-height:1.9; color:#8fa8c8}
+  .steps div{display:flex; gap:8px; align-items:center}
+  .steps .s{width:14px; color:#4d5a75}
+  .steps .done{color:var(--grass)}
+  .steps .now{color:var(--gold)}
+  .bar{height:16px; background:#0a1120; border:3px solid var(--outline); margin:12px 0 6px;
+       box-shadow:inset 0 3px 0 #050a16}
+  .bar i{display:block; height:100%; width:0%;
+         background:repeating-linear-gradient(90deg,var(--gold) 0 8px,var(--gold-dark) 8px 12px)}
+  .pct{font-size:10px; color:#7d8aa8; text-align:right}
+
+  /* тост */
+  .toast{
+    position:absolute; left:50%; bottom:86px; transform:translate(-50%, 20px);
+    background:var(--gold); color:#141b2b; border:3px solid var(--outline);
+    padding:9px 14px; font:800 11px/1 ui-monospace,monospace; letter-spacing:.06em;
+    box-shadow:inset 0 -4px 0 var(--gold-dark), 0 10px 24px rgba(0,0,0,.5);
+    opacity:0; transition:.25s; pointer-events:none; z-index:30; white-space:nowrap;
+  }
+  .toast.on{opacity:1; transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"><span>RINGBOX · PROTOTYPE</span><span>12:00</span></div>
+
+  <header>
+    <div class="brand">
+      <img id="logo" alt="RingBox">
+      <div>
+        <div class="t">RingBox</div>
+        <div class="s">МОДЫ В ОДИН ТАП</div>
+      </div>
+      <div class="rings">
+        <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+          <rect x="4" y="1" width="8" height="2" fill="#ffd23f"/>
+          <rect x="2" y="3" width="2" height="2" fill="#ffd23f"/>
+          <rect x="12" y="3" width="2" height="2" fill="#ffd23f"/>
+          <rect x="1" y="5" width="2" height="6" fill="#ffd23f"/>
+          <rect x="13" y="5" width="2" height="6" fill="#ffd23f"/>
+          <rect x="2" y="11" width="2" height="2" fill="#c07d05"/>
+          <rect x="12" y="11" width="2" height="2" fill="#c07d05"/>
+          <rect x="4" y="13" width="8" height="2" fill="#c07d05"/>
+        </svg>
+        <span id="ringCount">12</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= ПАПКА ================= -->
+    <section class="screen" id="s-folder">
+      <h2>ПАПКА ИГРЫ</h2>
+
+      <div class="panel metal">
+        <div class="path"><b>/storage/emulated/0/RSDK/v5/</b></div>
+        <div class="check"><span class="dot"></span> Data.rsdk найден · Settings.ini · mods/</div>
+      </div>
+
+      <div class="panel">
+        <div style="font-size:11px; line-height:1.7; color:#9fb6d6">
+          Доступ выдан через SAF и сохранён — при перезапуске
+          приложение снова спросит папку только если её удалили.
+          Root, adb и Shizuku не нужны.
+        </div>
+      </div>
+
+      <button class="btn" onclick="toast('ПАПКА ВЫБРАНА')">Сменить папку</button>
+      <div class="hint">
+        Выбирай папку <b>v5</b> целиком, а не mods внутри неё:
+        приложение само найдёт вложенную папку модов.
+      </div>
+    </section>
+
+    <!-- ================= КАТАЛОГ ================= -->
+    <section class="screen on" id="s-catalog">
+      <div class="search">
+        <input id="q" placeholder="ПОИСК ПО МОДАМ" oninput="renderCatalog()">
+      </div>
+      <h2>GAMEBANANA · SONIC MANIA</h2>
+      <div id="catalog"></div>
+    </section>
+
+    <!-- ================= МОИ МОДЫ ================= -->
+    <section class="screen" id="s-installed">
+      <h2>УСТАНОВЛЕНЫ · ПОРЯДОК ЗАГРУЗКИ</h2>
+      <div id="installed"></div>
+      <div class="hint">
+        Моды грузятся <b>снизу вверх</b>: чем ниже в списке — тем выше приоритет.
+        Стрелки меняют порядок.
+      </div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="on" data-s="s-catalog" onclick="go(this)">
+      <span class="ico">▦</span>Каталог
+    </button>
+    <button data-s="s-installed" onclick="go(this)">
+      <span class="ico">▤</span>Мои моды
+    </button>
+    <button data-s="s-folder" onclick="go(this)">
+      <span class="ico">▣</span>Папка
+    </button>
+  </nav>
+
+  <!-- модалка установки -->
+  <div class="sheet" id="sheet">
+    <div class="box">
+      <h3 id="mTitle">УСТАНОВКА</h3>
+      <div class="sub" id="mSub">Sonic Mania Randomizer</div>
+      <div class="steps" id="mSteps"></div>
+      <div class="bar"><i id="mBar"></i></div>
+      <div class="pct" id="mPct">0%</div>
+      <button class="btn" id="mBtn" onclick="closeSheet()" disabled>ГОТОВО</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ---------- логотип вшит как data-URI (иконка из проекта) ---------- */
+document.getElementById('logo').src = "data:image/png;base64,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";
+
+/* ---------- мок-данные каталога (реальные имена модов Mania) ---------- */
+const CATALOG = [
+  {id:1, n:"Sonic Mania Randomizer",       a:"glitchyfoxy",   mb:1.1,  dl:"12.4k", c:"Утилиты"},
+  {id:2, n:"Marble Zone: Reheated",        a:"Hez",           mb:6.8,  dl:"8.1k",  c:"Зоны"},
+  {id:3, n:"HYPERMANIA",                   a:"CBTBSD",        mb:14.2, dl:"21.7k", c:"Геймплей"},
+  {id:4, n:"Modern Amy",                   a:"SME",           mb:3.4,  dl:"5.6k",  c:"Персонажи"},
+  {id:5, n:"Green Hill Zone — Complete",   a:"Sonic Retro",   mb:9.9,  dl:"17.2k", c:"Зоны"},
+  {id:6, n:"Signpost Inspired Life Icons", a:"MegaDrive",     mb:0.4,  dl:"2.3k",  c:"Интерфейс"},
+];
+
+let INSTALLED = [
+  {id:101, n:"Green Hill Zone — Complete", a:"Sonic Retro", on:true},
+  {id:102, n:"HYPERMANIA",                 a:"CBTBSD",      on:false},
+];
+
+const installedIds = () => INSTALLED.map(m => m.n);
+
+/* ---------- каталог ---------- */
+function renderCatalog(){
+  const q = (document.getElementById('q').value || "").toLowerCase();
+  const box = document.getElementById('catalog');
+  const rows = CATALOG.filter(m => m.n.toLowerCase().includes(q) || m.a.toLowerCase().includes(q));
+  if(!rows.length){
+    box.innerHTML = '<div class="empty"><span class="big">✕</span>НИЧЕГО НЕ НАЙДЕНО</div>';
+    return;
+  }
+  box.innerHTML = rows.map(m => {
+    const have = installedIds().includes(m.n);
+    return `<div class="mod">
+      <div class="thumb"><i></i></div>
+      <div class="meta">
+        <div class="n">${m.n}</div>
+        <div class="a">${m.a} · ${m.c}</div>
+        <div class="d">${m.mb} МБ · ${m.dl} скачиваний</div>
+      </div>
+      <div class="act">
+        <button class="btn small" ${have ? "disabled" : ""} onclick="install(${m.id})">
+          ${have ? "ЕСТЬ" : "СТАВИТЬ"}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- установка ---------- */
+const STEPS = [
+  "Скачивание с GameBanana",
+  "Проверка MD5",
+  "Распаковка в mods/",
+  "Правка mod.ini (TargetVersion=5)",
+  "Добавлен в список загрузки"
+];
+
+function install(id){
+  const mod = CATALOG.find(m => m.id === id);
+  const sheet = document.getElementById('sheet');
+  const stepsEl = document.getElementById('mSteps');
+  const bar = document.getElementById('mBar');
+  const pct = document.getElementById('mPct');
+  const btn = document.getElementById('mBtn');
+
+  document.getElementById('mSub').textContent = mod.n;
+  btn.disabled = true;
+  bar.style.width = "0%";
+  pct.textContent = "0%";
+  stepsEl.innerHTML = STEPS.map((s,i)=>`<div><span class="s">·</span>${s}</div>`).join('');
+  sheet.classList.add('on');
+
+  let p = 0;
+  const timer = setInterval(()=>{
+    p += 4 + Math.random()*9;
+    if(p > 100) p = 100;
+    bar.style.width = p + "%";
+    pct.textContent = Math.round(p) + "%";
+
+    const done = Math.floor(p / 100 * STEPS.length);
+    [...stepsEl.children].forEach((el,i)=>{
+      const mark = el.querySelector('.s');
+      el.classList.remove('done','now');
+      if(i < done){ el.classList.add('done'); mark.textContent = "✓"; }
+      else if(i === done){ el.classList.add('now'); mark.textContent = "▶"; }
+      else { mark.textContent = "·"; }
+    });
+
+    if(p >= 100){
+      clearInterval(timer);
+      [...stepsEl.children].forEach(el=>{
+        el.classList.remove('now'); el.classList.add('done');
+        el.querySelector('.s').textContent = "✓";
+      });
+      btn.disabled = false;
+      if(!installedIds().includes(mod.n)){
+        INSTALLED.push({id:Date.now(), n:mod.n, a:mod.a, on:true});
+      }
+      ringCount(6);
+      renderInstalled();
+      renderCatalog();
+    }
+  }, 130);
+}
+
+function closeSheet(){
+  document.getElementById('sheet').classList.remove('on');
+  toast("МОД УСТАНОВЛЕН");
+  go(document.querySelector('[data-s="s-installed"]'));
+}
+
+/* ---------- установленные ---------- */
+function renderInstalled(){
+  const box = document.getElementById('installed');
+  if(!INSTALLED.length){
+    box.innerHTML = '<div class="empty"><span class="big">◎</span>ПОКА ПУСТО<br>загляни в каталог</div>';
+    return;
+  }
+  box.innerHTML = INSTALLED.map((m,i)=>`
+    <div class="row ${m.on ? "" : "off"}">
+      <div class="num">${i+1}</div>
+      <div class="switch ${m.on ? "on" : ""}" onclick="toggle(${i})"><b></b></div>
+      <div class="meta">
+        <div class="n">${m.n}</div>
+        <div class="a">${m.a}</div>
+      </div>
+      <div class="move">
+        <button onclick="move(${i},-1)">▲</button>
+        <button onclick="move(${i},1)">▼</button>
+      </div>
+      <button class="del" onclick="remove(${i})">✕</button>
+    </div>`).join('');
+}
+
+function toggle(i){ INSTALLED[i].on = !INSTALLED[i].on; renderInstalled(); toast(INSTALLED[i].on ? "ВКЛЮЧЁН" : "ВЫКЛЮЧЕН"); }
+function remove(i){ const n = INSTALLED[i].n; INSTALLED.splice(i,1); renderInstalled(); renderCatalog(); toast("УДАЛЁН: " + n); }
+function move(i,d){
+  const j = i + d;
+  if(j < 0 || j >= INSTALLED.length) return;
+  [INSTALLED[i], INSTALLED[j]] = [INSTALLED[j], INSTALLED[i]];
+  renderInstalled();
+}
+
+/* ---------- навигация, тосты, кольца ---------- */
+function go(btn){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(btn.dataset.s).classList.add('on');
+}
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('on'), 1600);
+}
+
+let rings = 12;
+function ringCount(delta){
+  rings += delta;
+  document.getElementById('ringCount').textContent = rings;
+}
+
+renderCatalog();
+renderInstalled();
+</script>
+</body>
+</html>

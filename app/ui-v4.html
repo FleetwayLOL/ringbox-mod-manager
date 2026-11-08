@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RingBox</title>
+<style>
+:root{
+  --bg:#0A0B0F;
+  --bg-2:#0E1015;
+  --surface:#131519;
+  --surface-2:#191C22;
+  --line:rgba(255,255,255,.07);
+  --line-2:rgba(255,255,255,.12);
+  --text:#F4F5F7;
+  --text-2:#9BA1AE;
+  --text-3:#666C79;
+  --gold:#FFC94A;
+  --gold-2:#F0AF2A;
+  --green:#39D07A;
+  --red:#FF5A5F;
+  --r-card:20px;
+  --ease:cubic-bezier(.22,.9,.24,1);
+  --gold-l:#FFD463;
+  --glow:rgba(255,201,74,.16);
+  --gold-shadow:rgba(255,201,74,.5);
+  --tab-bg:rgba(20,22,28,.82);
+  --fade-1:rgba(10,11,15,0);
+  --fade-2:rgba(10,11,15,.85);
+  --device-border:#23262E;
+  --chassis:#0C0D11;
+  --accent-soft:rgba(255,201,74,.10);
+  --grid-dot:rgba(255,255,255,.10);
+}
+html[data-theme="light"]{
+  --bg:#F3F4F7;
+  --surface:#FFFFFF;
+  --surface-2:#F4F5F8;
+  --line:rgba(16,20,30,.09);
+  --line-2:rgba(16,20,30,.16);
+  --text:#14161B;
+  --text-2:#666C79;
+  --text-3:#9AA1AD;
+  --tab-bg:rgba(255,255,255,.86);
+  --fade-1:rgba(243,244,247,0);
+  --fade-2:rgba(243,244,247,.9);
+  --device-border:#D9DCE3;
+  --chassis:#EDEEF2;
+  --grid-dot:rgba(16,20,30,.13);
+}
+html[data-theme="light"] body{background:#E7E9EE}
+html[data-theme="light"] .device{box-shadow:0 40px 80px -30px rgba(20,25,40,.35), 0 0 0 10px #EDEEF2, 0 0 0 11px #D9DCE3}
+html[data-theme="light"] .iconbtn{background:#F4F5F8}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:#050609;display:grid;place-items:center;padding:20px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:var(--text);-webkit-font-smoothing:antialiased;
+  font-feature-settings:"tnum" 1,"ss01" 1;
+}
+.device{
+  position:relative;width:402px;height:848px;overflow:hidden;
+  background:var(--bg);border:1px solid #23262E;border-radius:44px;
+  box-shadow:0 50px 90px -30px rgba(0,0,0,.9), 0 0 0 10px #0C0D11, 0 0 0 11px #1B1E25;
+  display:flex;flex-direction:column;
+}
+/* мягкое золотое свечение сверху — единственный «декор» */
+.device::before{
+  content:"";position:absolute;left:50%;top:-260px;width:620px;height:520px;transform:translateX(-50%);
+  background:radial-gradient(circle, var(--glow), transparent 62%);
+  pointer-events:none;z-index:0;
+}
+
+/* ---------- статус-бар ---------- */
+.status{position:relative;z-index:8;display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px 4px;font-size:14px;font-weight:600;letter-spacing:.2px;color:var(--text)}
+.status .right{display:flex;align-items:center;gap:6px;opacity:.9}
+
+/* ---------- шапка ---------- */
+.topbar{position:relative;z-index:3;display:flex;align-items:center;gap:11px;padding:12px 20px 6px}
+.logo{width:34px;height:34px;flex:0 0 34px}
+.wordmark{font-size:18px;font-weight:650;letter-spacing:-.3px}
+.iconbtn{
+  margin-left:auto;width:38px;height:38px;border-radius:13px;border:1px solid var(--line);
+  background:var(--surface);display:grid;place-items:center;color:var(--text-2);cursor:pointer;
+  transition:background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+}
+.iconbtn:hover{background:var(--surface-2);color:var(--text);border-color:var(--line-2)}
+.iconbtn:active{transform:scale(.96)}
+
+/* ---------- контент ---------- */
+main{position:relative;z-index:2;flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 20px 126px;scrollbar-width:none}
+main::-webkit-scrollbar{width:0}
+.page{display:none;animation:pageIn .32s var(--ease)}
+.page.on{display:block}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+h1{font-size:30px;font-weight:680;letter-spacing:-1px;line-height:1.1;margin:8px 0 4px}
+.sub{font-size:13px;color:var(--text-2);margin-bottom:18px}
+.sub b{color:var(--gold);font-weight:600}
+
+/* поиск */
+.search{
+  display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;margin-bottom:14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  transition:border-color .2s var(--ease), background .2s var(--ease);
+}
+.search:focus-within{border-color:rgba(255,201,74,.4);background:#16181E}
+.search svg{color:var(--text-3);flex:0 0 auto}
+.search input{
+  flex:1;background:none;border:0;outline:0;color:var(--text);font-size:14.5px;
+  font-family:inherit;letter-spacing:-.1px;
+}
+.search input::placeholder{color:var(--text-3)}
+.kbd{font-size:11px;color:var(--text-3);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+
+/* чипсы */
+.chips{display:flex;gap:8px;overflow-x:auto;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding-bottom:16px;margin:0 -20px;padding-left:20px;padding-right:20px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;height:34px;padding:0 14px;border-radius:11px;border:1px solid var(--line);
+  background:var(--surface);color:var(--text-2);font-size:13.5px;font-weight:520;
+  display:flex;align-items:center;cursor:pointer;transition:.2s var(--ease);white-space:nowrap;
+}
+.chip:hover{color:var(--text);border-color:var(--line-2)}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#1E1607;font-weight:600}
+
+/* карточка мода */
+.mod{
+  display:flex;align-items:center;gap:13px;padding:12px;margin-bottom:10px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
+  transition:background .22s var(--ease), border-color .22s var(--ease), transform .22s var(--ease);
+  cursor:pointer;
+}
+.mod:hover{background:var(--surface-2);border-color:var(--line-2)}
+.mod:active{transform:scale(.99)}
+.thumb{
+  width:54px;height:54px;flex:0 0 54px;border-radius:15px;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,var(--c1),var(--c2));
+  display:grid;place-items:center;color:rgba(255,255,255,.92);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);
+}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.16),transparent 55%)}
+.info{flex:1;min-width:0}
+.name{font-size:14.5px;font-weight:600;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{font-size:12.5px;color:var(--text-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta i{font-style:normal;color:var(--text-3);margin:0 5px}
+.pill{
+  flex:0 0 auto;height:33px;padding:0 12px;border-radius:11px;border:0;cursor:pointer;
+  font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:-.1px;
+  background:var(--gold);color:#241A06;display:flex;align-items:center;gap:6px;
+  transition:transform .18s var(--ease), filter .18s var(--ease), background .18s var(--ease);
+}
+.pill:hover{filter:brightness(1.07)}
+.pill:active{transform:scale(.96)}
+.pill{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%}
+.pill.done{background:rgba(57,208,122,.10);color:var(--green);border:1px solid rgba(57,208,122,.22)}
+.pill.done svg{color:var(--green)}
+
+/* секции */
+.sect{display:flex;align-items:center;justify-content:space-between;margin:22px 0 12px}
+.sect h2{font-size:15px;font-weight:620;letter-spacing:-.2px}
+.sect span{font-size:12.5px;color:var(--text-3)}
+
+/* строка «мои моды» */
+.row{
+  display:flex;align-items:center;gap:13px;padding:11px 12px;margin-bottom:8px;
+  background:var(--surface);border:1px solid var(--line);border-radius:18px;
+  transition:background .2s var(--ease);
+}
+.row:hover{background:var(--surface-2)}
+.row .thumb{width:42px;height:42px;flex:0 0 42px;border-radius:12px}
+.grip{color:var(--text-3);margin-right:-2px;cursor:grab}
+.sw{width:44px;height:27px;border-radius:99px;background:#2A2E36;position:relative;cursor:pointer;
+  transition:background .22s var(--ease);flex:0 0 44px}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;
+  background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.45);transition:transform .22s var(--ease)}
+.sw.on{background:var(--gold)}
+.sw.on::after{transform:translateX(17px)}
+
+/* карточка статуса */
+.status-card{
+  padding:18px;border-radius:22px;background:
+    radial-gradient(120% 100% at 0% 0%, var(--accent-soft), transparent 55%), var(--surface);
+  border:1px solid var(--line);margin-top:6px;
+}
+.status-top{display:flex;align-items:center;gap:13px}
+.badge-icon{width:46px;height:46px;border-radius:14px;background:var(--accent-soft);display:grid;place-items:center;color:var(--gold)}
+.status-title{font-size:16px;font-weight:620;letter-spacing:-.2px}
+.status-sub{font-size:12.5px;color:var(--text-2);margin-top:3px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(57,208,122,.15)}
+.path{
+  margin-top:16px;padding:12px 14px;border-radius:14px;background:#0D0F13;border:1px solid var(--line);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#C8CEDA;
+  display:flex;align-items:center;gap:8px;overflow:hidden;
+}
+.path span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.path b{color:var(--gold);font-weight:600}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;margin-top:16px;background:var(--line);border-radius:16px;overflow:hidden}
+.stat{background:var(--surface);padding:13px 10px;text-align:center}
+.stat b{display:block;font-size:16.5px;font-weight:640;letter-spacing:-.4px;white-space:nowrap}
+.stat span{font-size:11px;color:var(--text-3);display:block;margin-top:3px}
+
+.btn{
+  height:50px;border-radius:16px;border:0;width:100%;font-family:inherit;font-size:15px;font-weight:600;
+  letter-spacing:-.2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:filter .18s var(--ease), transform .18s var(--ease), background .18s var(--ease);
+}
+.btn:active{transform:scale(.985)}
+.btn-primary{background:linear-gradient(180deg,var(--gold-l),var(--gold-2));color:#241A06;
+  box-shadow:0 8px 22px -8px var(--gold-shadow)}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--surface-2)}
+.actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:18px}
+
+/* заметка */
+.note{display:flex;gap:11px;padding:14px;border-radius:16px;background:rgba(255,255,255,.03);
+  border:1px solid var(--line);font-size:12.5px;color:var(--text-2);line-height:1.5;margin-top:16px}
+.note svg{color:var(--text-3);flex:0 0 auto;margin-top:1px}
+
+
+/* ---------- НАСТРОЙКИ ---------- */
+.settings{
+  position:absolute;inset:0;z-index:7;background:var(--bg);
+  display:flex;flex-direction:column;
+  transform:translateX(102%);transition:transform .38s var(--ease);
+  box-shadow:-30px 0 60px -30px rgba(0,0,0,.7);
+}
+.settings.on{transform:none}
+.settings::before{
+  content:"";position:absolute;left:50%;top:-300px;width:600px;height:520px;transform:translateX(-50%);
+  background:radial-gradient(circle, var(--glow), transparent 62%);pointer-events:none;
+}
+.set-head{position:relative;display:flex;align-items:center;gap:12px;padding:48px 20px 12px}
+.set-title{font-size:19px;font-weight:650;letter-spacing:-.35px}
+.set-body{position:relative;flex:1;overflow-y:auto;padding:4px 20px 40px;scrollbar-width:none}
+.set-body::-webkit-scrollbar{width:0}
+.set-label{font-size:12.5px;font-weight:600;color:var(--text-3);letter-spacing:.2px;margin:20px 2px 9px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
+.g-row{display:flex;align-items:center;gap:13px;padding:13px 14px;position:relative}
+.g-row + .g-row::before{content:"";position:absolute;left:62px;right:0;top:0;height:1px;background:var(--line)}
+.g-row.col{flex-direction:column;align-items:stretch;gap:12px}
+.g-row.col + .g-row.col::before{left:14px}
+.g-ic{width:34px;height:34px;flex:0 0 34px;border-radius:11px;display:grid;place-items:center;
+  background:var(--accent-soft);color:var(--gold)}
+.g-main{flex:1;min-width:0}
+.g-title{font-size:14.5px;font-weight:560;letter-spacing:-.15px}
+.g-sub{font-size:12px;color:var(--text-2);margin-top:2px}
+.chev{color:var(--text-3);flex:0 0 auto}
+.set-foot{text-align:center;font-size:11.5px;color:var(--text-3);margin-top:22px;line-height:1.5}
+
+.seg{display:flex;gap:4px;padding:3px;background:var(--surface-2);border-radius:12px;border:1px solid var(--line)}
+.seg button{flex:1;height:32px;border:0;border-radius:9px;background:transparent;color:var(--text-2);
+  font-family:inherit;font-size:12.5px;font-weight:560;cursor:pointer;transition:.2s var(--ease)}
+.seg button.on{background:var(--gold);color:#241A06;font-weight:640}
+
+.swatches{display:flex;gap:10px}
+.swatch{width:30px;height:30px;border-radius:50%;border:0;cursor:pointer;position:relative;
+  display:grid;place-items:center;transition:transform .18s var(--ease)}
+.swatch:active{transform:scale(.92)}
+.swatch i{width:100%;height:100%;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.swatch.on::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--gold)}
+.swatch em{position:absolute;color:#241A06;display:grid;place-items:center;font-style:normal}
+
+.tiles{display:flex;gap:9px}
+.tile{flex:1;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:7px 6px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:.2s var(--ease)}
+.tile span{font-size:10.5px;color:var(--text-2)}
+.tile.on{border-color:var(--gold);background:var(--accent-soft)}
+.tile.on span{color:var(--text)}
+.pv{width:100%;height:34px;border-radius:8px;background:#0A0B0F;position:relative;overflow:hidden;display:block}
+.pv-glow::after{content:"";position:absolute;left:50%;top:-14px;width:70px;height:44px;transform:translateX(-50%);
+  background:radial-gradient(circle, var(--glow), transparent 68%)}
+.pv-grid{background-image:radial-gradient(var(--grid-dot) 1px, transparent 1px);background-size:7px 7px}
+.pv-clean{background:#0A0B0F}
+html[data-theme="light"] .pv{background:#EDEFF3}
+html[data-theme="light"] .pv-clean{background:#FFF}
+
+/* фон «сетка» */
+.device[data-bg="grid"]::before{display:none}
+.device[data-bg="grid"]::after{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size:16px 16px}
+.device[data-bg="clean"]::before{display:none}
+
+/* ---------- таб-бар ---------- */
+.fade{position:absolute;left:0;right:0;bottom:0;height:154px;z-index:4;pointer-events:none;
+  background:linear-gradient(180deg, var(--fade-1), var(--fade-2) 54%, var(--bg) 78%)}
+.tabbar{
+  position:absolute;left:20px;right:20px;bottom:22px;z-index:5;height:64px;
+  display:flex;align-items:center;padding:0 8px;
+  background:var(--tab-bg);border:1px solid var(--line-2);border-radius:22px;
+  backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
+}
+.tab{
+  flex:1;height:48px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;color:var(--text-3);transition:color .2s var(--ease), background .2s var(--ease);
+}
+.tab span{font-size:10.5px;font-weight:560;letter-spacing:.1px}
+.tab.on{color:var(--gold);background:var(--accent-soft)}
+.tab:active{transform:scale(.97)}
+
+/* ---------- шит установки ---------- */
+.backdrop{
+  position:absolute;inset:0;z-index:8;background:rgba(4,5,8,.6);backdrop-filter:blur(3px);
+  opacity:0;pointer-events:none;transition:opacity .3s var(--ease);
+}
+.backdrop.on{opacity:1;pointer-events:auto}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:9;padding:10px 20px 26px;
+  background:var(--surface);border-top:1px solid rgba(255,255,255,.09);
+  border-radius:28px 28px 0 0;
+  transform:translateY(104%);transition:transform .42s var(--ease);
+  box-shadow:0 -30px 60px -20px rgba(0,0,0,.8);
+}
+.sheet.on{transform:none}
+.handle{width:38px;height:4px;border-radius:99px;background:#33373F;margin:4px auto 18px}
+.sheet-head{display:flex;align-items:center;gap:13px;margin-bottom:20px}
+.sheet-head .thumb{width:52px;height:52px;flex:0 0 52px;border-radius:15px}
+.bar-wrap{height:6px;border-radius:99px;background:#22252C;overflow:hidden;margin:6px 0 10px}
+.bar-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--gold-2),var(--gold));
+  box-shadow:0 0 14px var(--gold-shadow);transition:width .45s var(--ease)}
+.bar-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-2)}
+.bar-label b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.steps{margin:18px 0 6px}
+.step{display:flex;align-items:center;gap:11px;padding:7px 0;font-size:13.5px;color:var(--text-3);
+  transition:color .25s var(--ease)}
+.step .ic{width:20px;height:20px;flex:0 0 20px;border-radius:50%;display:grid;place-items:center;
+  border:1.5px solid #2E323A;transition:.25s var(--ease)}
+.step.act{color:var(--text)}
+.step.act .ic{border-color:rgba(255,201,74,.5)}
+.step.act .ic::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold);
+  animation:beat 1s infinite var(--ease)}
+@keyframes beat{50%{transform:scale(.6);opacity:.5}}
+.step.done{color:var(--text-2)}
+.step.done .ic{background:rgba(57,208,122,.16);border-color:transparent;color:var(--green)}
+.toast{
+  position:absolute;left:50%;bottom:106px;transform:translate(-50%,14px);z-index:20;
+  padding:11px 16px;border-radius:14px;background:rgba(26,29,36,.96);border:1px solid var(--line-2);
+  font-size:13px;font-weight:520;color:var(--text);opacity:0;pointer-events:none;
+  transition:.28s var(--ease);box-shadow:0 16px 30px -12px rgba(0,0,0,.8);display:flex;align-items:center;gap:8px;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast svg{color:var(--gold)}
+/* ===== реальные обложки, теги, скриншот в шите ===== */
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.tags{display:flex;gap:6px;margin-top:7px;overflow:hidden}
+.tag{font-size:10.5px;font-weight:600;letter-spacing:.01em;padding:3px 8px;border-radius:99px;
+  background:var(--surface-2);color:var(--text-2);border:1px solid var(--line);white-space:nowrap}
+.tag.hot{color:var(--gold);border-color:rgba(255,201,74,.34);background:rgba(255,201,74,.10)}
+.sheet-shot{margin:2px 0 16px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  aspect-ratio:16/9;background:var(--surface-2)}
+.sheet-shot img{width:100%;height:100%;object-fit:cover;display:block}
+.mod .name{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.28}
+.sheet-head .meta{max-width:calc(100% - 52px)}
+.avline{display:flex;align-items:center;gap:7px;margin-top:9px}
+.avline img{width:20px;height:20px;border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 0 1px var(--line)}
+.avline span{font-size:12.5px;color:var(--text-2)}
+
+/* ===== обход блокировки ===== */
+.bypass-hint{display:flex;align-items:center;gap:11px;margin:0 0 12px;padding:12px;border-radius:var(--r-card);
+  background:linear-gradient(180deg,rgba(255,201,74,.13),rgba(255,201,74,.05));
+  border:1px solid rgba(255,201,74,.32)}
+.bypass-hint .bh-ic{width:32px;height:32px;flex:0 0 32px;border-radius:10px;display:grid;place-items:center;
+  background:rgba(255,201,74,.16);color:var(--gold)}
+.bypass-hint .bh-main{flex:1;min-width:0}
+.bypass-hint b{display:block;font-size:13px;font-weight:620;letter-spacing:-.2px}
+.bypass-hint span{display:block;font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.3}
+.bypass-hint button{border:0;border-radius:99px;background:var(--gold);color:#241A06;font-family:inherit;
+  font-size:12px;font-weight:660;padding:8px 13px;cursor:pointer}
+.proxy-field{width:100%;margin-top:10px;display:flex;align-items:center;gap:8px;padding:11px 12px;
+  border-radius:11px;background:var(--surface-2);border:1px solid var(--line)}
+.proxy-field input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);
+  font-family:inherit;font-size:13px}
+.proxy-field input::placeholder{color:var(--text-3)}
+.status-line{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:11.5px;
+  padding:8px 11px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);color:var(--text-2)}
+.status-line i{width:7px;height:7px;border-radius:50%;background:var(--text-3);flex:0 0 7px}
+.status-line.ok{color:#8CE39A;border-color:rgba(140,227,154,.3);background:rgba(140,227,154,.08)}
+.status-line.ok i{background:#8CE39A;box-shadow:0 0 8px rgba(140,227,154,.7)}
+.status-line.bad{color:#FF8A8E;border-color:rgba(255,138,142,.3);background:rgba(255,138,142,.08)}
+.status-line.bad i{background:#FF8A8E}
+.status-line.busy i{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+
+/* ===== выбор языка ===== */
+.lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lang-tile{display:flex;align-items:center;gap:9px;padding:10px;border-radius:13px;cursor:pointer;
+  background:var(--surface-2);border:1px solid var(--line);transition:.18s var(--ease)}
+.lang-tile.wide{grid-column:1 / -1}
+.lang-tile.on{border-color:var(--gold);background:rgba(255,201,74,.10)}
+.lang-badge{width:32px;height:26px;flex:0 0 32px;border-radius:7px;display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--line);font-size:9.5px;font-weight:700;color:var(--text-2)}
+.lang-tile.on .lang-badge{color:var(--gold);border-color:rgba(255,201,74,.4)}
+.lang-name{flex:1;min-width:0}
+.lang-name b{display:block;font-size:13px;font-weight:600;letter-spacing:-.1px}
+.lang-name span{display:block;font-size:10.5px;color:var(--text-3)}
+.lang-tile.on .lang-name b{color:var(--text)}
+.lang-check{color:var(--gold);font-size:14px;font-weight:700}
+
+</style>
+</head>
+<body>
+<div class="device">
+
+  <!-- статус-бар -->
+  <div class="status">
+    <div>9:41</div>
+    <div class="right">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.2c2 0 3.9.8 5.3 2.1l1.2-1.2A9.2 9.2 0 0 0 8 .8a9.2 9.2 0 0 0-6.5 2.3l1.2 1.2A7.4 7.4 0 0 1 8 2.2Zm0 3.4c1.2 0 2.3.5 3.2 1.3l1.2-1.2A6.2 6.2 0 0 0 8 4.2a6.2 6.2 0 0 0-4.4 1.5l1.2 1.2A4.5 4.5 0 0 1 8 5.6Zm0 3.4c.6 0 1.1.2 1.5.6L8 11 6.5 9.6c.4-.4.9-.6 1.5-.6Z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 0 0 0-4Z" fill="currentColor" opacity=".5"/></svg>
+    </div>
+  </div>
+
+  <!-- шапка -->
+  <div class="topbar">
+    <svg class="logo" viewBox="0 0 512 512" fill="none" aria-label="RingBox">
+      <defs>
+        <linearGradient id="bd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9BFC7"/><stop offset=".18" stop-color="#A3AAB3"/><stop offset=".52" stop-color="#8C939C"/><stop offset=".78" stop-color="#787F88"/><stop offset="1" stop-color="#61686F"/></linearGradient>
+        <linearGradient id="rg" x1=".15" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="#F2C860"/><stop offset=".38" stop-color="#E0AE36"/><stop offset=".72" stop-color="#C68F1E"/><stop offset="1" stop-color="#9E6E12"/></linearGradient>
+        <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9AFB7"/><stop offset="1" stop-color="#7C838B"/></linearGradient>
+      </defs>
+      <path d="M206 360 H306 L300 420 H212 Z" fill="url(#sg)"/>
+      <path d="M168 462 V444 L194 420 H318 L344 444 V462 Z" fill="url(#sg)"/>
+      <rect x="48" y="64" width="416" height="304" rx="34" fill="url(#bd)"/>
+      <rect x="48" y="64" width="416" height="304" rx="34" stroke="#464C54" stroke-width="5"/>
+      <path d="M84 82 H428" stroke="#FFF" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>
+      <rect x="92" y="112" width="328" height="196" rx="16" fill="#262B32"/>
+      <rect x="104" y="124" width="304" height="172" rx="9" fill="#15181D"/>
+      <rect x="110" y="130" width="292" height="160" rx="6" fill="#000"/>
+      <circle cx="256" cy="210" r="46" stroke="#000" stroke-width="26" fill="none"/>
+      <circle cx="256" cy="210" r="46" stroke="url(#rg)" stroke-width="22" fill="none"/>
+      <circle cx="256" cy="210" r="46" stroke="#FFEFC0" stroke-opacity=".55" stroke-width="5" fill="none" stroke-dasharray="42 247" transform="rotate(-150 256 210)"/>
+      <g stroke="#464C54" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"><path d="M228 328 H284"/><path d="M228 338 H284"/><path d="M240 348 H272"/></g>
+      <circle cx="392" cy="332" r="4.5" fill="#8CE39A" fill-opacity=".9"/>
+    </svg>
+    <div class="wordmark">RingBox</div>
+    <button class="iconbtn" id="gear" aria-label="Настройки">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.7a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>
+      </svg>
+    </button>
+  </div>
+
+  <main id="main">
+
+    <!-- ================= КАТАЛОГ ================= -->
+    <section class="page on" id="p-catalog">
+      <h1>Каталог</h1>
+      <div class="sub"><b id="modTotal">1 423</b> мода для Sonic Mania · GameBanana</div>
+
+      <div class="bypass-hint" id="bypassHint" style="display:none">
+        <div class="bh-ic">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 6.4v5.2c0 4.4-3.3 7.6-8 9.4-4.7-1.8-8-5-8-9.4V6.4L12 3Z"/><path d="m9 12 2.2 2.4L15.5 10"/></svg>
+        </div>
+        <div class="bh-main">
+          <b>GameBanana в РФ режется</b>
+          <span>Каталог не обновится, пока не включишь обход</span>
+        </div>
+        <button id="bhBtn">Включить</button>
+      </div>
+
+      <label class="search">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" placeholder="Поиск модов" autocomplete="off">
+      </label>
+
+      <div class="chips" id="chips"></div>
+      <div id="cards"></div>
+    </section>
+
+    <!-- ================= МОИ МОДЫ ================= -->
+    <section class="page" id="p-mine">
+      <h1>Мои моды</h1>
+      <div class="sub"><b id="mineCount">6</b> установлено · порядок загрузки снизу вверх</div>
+      <div id="mine"></div>
+      <div class="note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+        <div>Чем ниже мод в списке, тем позже он загружается и тем выше его приоритет. Перетаскивай, чтобы менять порядок.</div>
+      </div>
+    </section>
+
+    <!-- ================= ПАПКА ================= -->
+    <section class="page" id="p-folder">
+      <h1>Папка игры</h1>
+      <div class="sub">Откуда RingBox берёт данные и куда ставит моды</div>
+
+      <div class="status-card">
+        <div class="status-top">
+          <div class="badge-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h7A1.5 1.5 0 0 1 19 10v7a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17V7.5Z"/></svg>
+          </div>
+          <div>
+            <div class="status-title">Папка подключена</div>
+            <div class="status-sub"><span class="dot"></span>Data.rsdk найден · доступ есть</div>
+          </div>
+        </div>
+
+        <div class="path">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:#666C79;flex:0 0 auto"><path d="M4 7h6l2 2h8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>
+          <span>/storage/emulated/0/RSDK/<b>v5</b></span>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><b>6</b><span>модов</span></div>
+          <div class="stat"><b>18,4<span style="font-size:10.5px;font-weight:500"> МБ</span></b><span>занято</span></div>
+          <div class="stat"><b>3</b><span>сейва</span></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="pick">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h6l2 2h8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>
+            Изменить папку
+          </button>
+          <button class="btn btn-ghost" id="rescan">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
+            Проверить снова
+          </button>
+        </div>
+      </div>
+
+      <div class="note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <div>RingBox не просит полный доступ к памяти. Вы даёте права только на эту папку, и они сохраняются после перезапуска.</div>
+      </div>
+    </section>
+  </main>
+
+
+  <!-- ===== НАСТРОЙКИ ===== -->
+  <div class="settings" id="settings">
+    <div class="set-head">
+      <button class="iconbtn" id="back" aria-label="Назад" style="margin:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>
+      </button>
+      <div class="set-title">Настройки</div>
+    </div>
+
+    <div class="set-body">
+      <div class="set-label">Язык · Language</div>
+      <div class="lang-grid">
+        <div class="lang-tile wide" data-lang="auto">
+          <div class="lang-badge">AUTO</div>
+          <div class="lang-name"><b>Автоопределение</b><span>Язык интерфейса системы, без учёта региона</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile on" data-lang="ru">
+          <div class="lang-badge">RU</div>
+          <div class="lang-name"><b>Русский</b><span>Russian</span></div>
+          <div class="lang-check" style="display:block">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="en">
+          <div class="lang-badge">EN</div>
+          <div class="lang-name"><b>English</b><span>International</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="be">
+          <div class="lang-badge">BE</div>
+          <div class="lang-name"><b>Беларуская</b><span>Belarusian</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="kk">
+          <div class="lang-badge">KK</div>
+          <div class="lang-name"><b>Қазақша</b><span>Kazakh</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="de">
+          <div class="lang-badge">DE</div>
+          <div class="lang-name"><b>Deutsch</b><span>German</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="fr">
+          <div class="lang-badge">FR</div>
+          <div class="lang-name"><b>Français</b><span>French</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="es">
+          <div class="lang-badge">ES</div>
+          <div class="lang-name"><b>Español</b><span>Spanish</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="pt">
+          <div class="lang-badge">PT</div>
+          <div class="lang-name"><b>Português</b><span>Portuguese</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="it">
+          <div class="lang-badge">IT</div>
+          <div class="lang-name"><b>Italiano</b><span>Italian</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="pl">
+          <div class="lang-badge">PL</div>
+          <div class="lang-name"><b>Polski</b><span>Polish</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="tr">
+          <div class="lang-badge">TR</div>
+          <div class="lang-name"><b>Türkçe</b><span>Turkish</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="zh">
+          <div class="lang-badge">ZH</div>
+          <div class="lang-name"><b>简体中文</b><span>Chinese</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="ja">
+          <div class="lang-badge">JA</div>
+          <div class="lang-name"><b>日本語</b><span>Japanese</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="ko">
+          <div class="lang-badge">KO</div>
+          <div class="lang-name"><b>한국어</b><span>Korean</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+        <div class="lang-tile" data-lang="ar">
+          <div class="lang-badge">AR</div>
+          <div class="lang-name"><b>العربية</b><span>Arabic</span></div>
+          <div class="lang-check" style="display:none">✓</div>
+        </div>
+      </div>
+
+      <div class="set-label">Игра</div>
+      <div class="group">
+        <div class="g-row" id="rowFolder" style="cursor:pointer">
+          <div class="g-ic">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.2c0-.7.6-1.2 1.2-1.2h4.4l1.9 2.3h7.9c.7 0 1.2.6 1.2 1.2v8.3c0 .7-.6 1.2-1.2 1.2H4.7c-.7 0-1.2-.6-1.2-1.2V7.2Z"/><path d="M3.5 11h17"/></svg>
+          </div>
+          <div class="g-main">
+            <div class="g-title">Папка игры</div>
+            <div class="g-sub">RSDK/v5 · Data.rsdk найден</div>
+          </div>
+          <svg class="chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+
+        <div class="g-row">
+          <div class="g-ic">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
+          </div>
+          <div class="g-main">
+            <div class="g-title">Проверять обновления</div>
+            <div class="g-sub">Раз в сутки, по Wi-Fi</div>
+          </div>
+          <div class="sw on" data-sw></div>
+        </div>
+
+        <div class="g-row" style="cursor:pointer">
+          <div class="g-ic">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6"/></svg>
+          </div>
+          <div class="g-main">
+            <div class="g-title">Кэш загрузок</div>
+            <div class="g-sub">128 МБ · очистить</div>
+          </div>
+          <svg class="chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="set-label">Обход блокировки</div>
+      <div class="group">
+        <div class="g-row">
+          <div class="g-ic">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 6.4v5.2c0 4.4-3.3 7.6-8 9.4-4.7-1.8-8-5-8-9.4V6.4L12 3Z"/><path d="m9 12 2.2 2.4L15.5 10"/></svg>
+          </div>
+          <div class="g-main">
+            <div class="g-title">Обход блокировки</div>
+            <div class="g-sub" id="bypassSub">Включён · канал: авто</div>
+          </div>
+          <div class="sw on" id="bypassSw"></div>
+        </div>
+
+        <div id="bypassBody">
+          <div class="g-row col">
+            <div class="g-main">
+              <div class="g-title">Канал</div>
+              <div class="g-sub" id="bypassModeSub">Авто — перебирает каналы и берёт первый живой</div>
+            </div>
+            <div class="seg" id="segBypass">
+              <button data-m="auto" class="on">Авто</button>
+              <button data-m="doh">DoH</button>
+              <button data-m="mirror">Зеркало</button>
+              <button data-m="proxy">Прокси</button>
+            </div>
+          </div>
+
+          <div class="g-row col" id="proxyRow" style="display:none">
+            <div class="g-main">
+              <div class="g-title">Адрес прокси</div>
+              <div class="g-sub">host:port · socks5://host:port</div>
+            </div>
+            <label class="proxy-field">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-3)"><path d="M4 12h16M12 4v16"/></svg>
+              <input id="proxyAddr" placeholder="127.0.0.1:1080" autocomplete="off" spellcheck="false">
+            </label>
+          </div>
+
+          <div class="g-row" id="bypassCheck" style="cursor:pointer">
+            <div class="g-ic">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13h4l2.5-6 4 12L15.5 13H22"/></svg>
+            </div>
+            <div class="g-main">
+              <div class="g-title" id="checkTitle">Проверить соединение</div>
+              <div class="g-sub">Пока не проверяли</div>
+            </div>
+            <svg class="chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </div>
+          <div class="g-row col" style="padding-top:0">
+            <div class="status-line" id="bypassStatus"><i></i><span id="bypassStatusText">Ждём проверки</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-label">Персонализация</div>
+      <div class="group">
+        <div class="g-row col">
+          <div class="g-main">
+            <div class="g-title">Тема</div>
+            <div class="g-sub">Оформление интерфейса</div>
+          </div>
+          <div class="seg" id="segTheme">
+            <button data-theme="auto">Авто</button>
+            <button data-theme="dark" class="on">Тёмная</button>
+            <button data-theme="light">Светлая</button>
+          </div>
+        </div>
+
+        <div class="g-row col">
+          <div class="g-main">
+            <div class="g-title">Акцент</div>
+            <div class="g-sub" id="accName">Золото</div>
+          </div>
+          <div class="swatches" id="swatches"></div>
+        </div>
+
+        <div class="g-row col">
+          <div class="g-main">
+            <div class="g-title">Фон</div>
+            <div class="g-sub">Подложка за карточками</div>
+          </div>
+          <div class="tiles" id="bgTiles">
+            <button class="tile on" data-bg="glow"><i class="pv pv-glow"></i><span>Свечение</span></button>
+            <button class="tile" data-bg="clean"><i class="pv pv-clean"></i><span>Чистый</span></button>
+            <button class="tile" data-bg="grid"><i class="pv pv-grid"></i><span>Сетка</span></button>
+          </div>
+        </div>
+
+        <div class="g-row col">
+          <div class="g-main">
+            <div class="g-title">Скругление</div>
+            <div class="g-sub">Форма карточек</div>
+          </div>
+          <div class="seg" id="segRadius">
+            <button data-r="24">Мягкое</button>
+            <button data-r="20" class="on">Обычное</button>
+            <button data-r="12">Строгое</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-label">Ещё</div>
+      <div class="group">
+        <div class="g-row">
+          <div class="g-ic">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          </div>
+          <div class="g-main">
+            <div class="g-title">О приложении</div>
+            <div class="g-sub">RingBox 1.0.0</div>
+          </div>
+          <svg class="chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="set-foot">Менеджер модов для декомпиляции Sonic Mania (RSDKv5)</div>
+    </div>
+  </div>
+
+  <div class="fade"></div>
+
+  <!-- таб-бар -->
+  <nav class="tabbar">
+    <div class="tab on" data-p="catalog">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+      <span>Каталог</span>
+    </div>
+    <div class="tab" data-p="mine">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9L12 3Z"/></svg>
+      <span>Мои</span>
+    </div>
+    <div class="tab" data-p="folder">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h6l2 2h8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>
+      <span>Папка</span>
+    </div>
+  </nav>
+
+  <!-- шит установки -->
+  <div class="backdrop" id="backdrop"></div>
+  <div class="sheet" id="sheet">
+    <div class="handle"></div>
+    <div class="sheet-shot" id="shShot"></div>
+    <div class="sheet-head">
+      <div class="thumb" id="shThumb" style="--c1:#2B6CFF;--c2:#0B2A6B"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 11h4M8 9v4M15 10h.01M17 13h.01"/><rect x="2.5" y="6.5" width="19" height="11" rx="5.5"/></svg></div>
+      <div style="flex:1;min-width:0">
+        <div class="name" id="shName">Randomizer</div>
+        <div class="meta" id="shMeta">Soryn · Геймплей</div>
+        <div class="avline" id="shAv"><span></span></div>
+      </div>
+      <button class="iconbtn" id="shClose" aria-label="Закрыть" style="margin:0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="bar-label" id="barLabel" style="display:none"><span id="barStage">Скачивание</span><b id="barPct">0%</b></div>
+    <div class="bar-wrap" id="barWrap" style="display:none"><div class="bar-fill" id="barFill"></div></div>
+
+    <div class="steps" id="steps" style="display:none"></div>
+
+    <button class="btn btn-primary" id="shInstall" style="margin-top:18px">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg>
+      Установить
+    </button>
+
+    <button class="btn btn-ghost" id="shDone" style="margin-top:10px;display:none">Отмена</button>
+  </div>
+
+  <div class="toast" id="toast"><span id="toastText"></span></div>
+</div>
+
+<script>
+/* ---------------- данные ---------------- */
+const ICONS = {
+  game:  '<path d="M6 11h4M8 9v4M15 10h.01M17 13h.01"/><rect x="2.5" y="6.5" width="19" height="11" rx="5.5"/>',
+  brush: '<path d="M4 20c3 0 4-2 4-4 0-1.2-1-2-2-2s-2 .8-2 2c0 2-1 3-1 3s.6 1 1 1Z"/><path d="M9.5 15.5 19 6a2 2 0 0 0-3-3L6.5 12.5"/>',
+  music: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+  spark: '<path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/>',
+  map:   '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>'
+};
+const MODS = [
+  {id:609081, n:"Sonic Mania Randomizer", a:"CodenameGamma", likes:58, cat:'Разное', tags:["Разное"], img:'/img/m609081.jpg', big:'/img/b609081.jpg', av:'/img/a609081.jpg'},
+  {id:729864, n:"Marble Zone: Reheated", a:"ZachmanAwesomenessII", likes:3, cat:'Зоны', tags:["Зоны"], img:'/img/m729864.jpg', big:'/img/b729864.jpg', av:'/img/a729864.jpg'},
+  {id:727317, n:"Sonic 1/2/3 Signpost Leg", a:"atgee", likes:1, cat:'Скины', tags:["Скины"], img:'/img/m727317.jpg', big:'/img/b727317.jpg', av:'/img/a727317.jpg'},
+  {id:726603, n:"Signpost Inspired Life Icons (Mania)", a:"atgee", likes:1, cat:'Интерфейс', tags:["Интерфейс"], img:'/img/m726603.jpg', big:'/img/b726603.jpg', av:'/img/a726603.jpg'},
+  {id:468639, n:"Green Hill Zone - Complete", a:"Sanic17_DJ", likes:44, cat:'Зоны', tags:["Зоны"], img:'/img/m468639.jpg', big:'/img/b468639.jpg', av:'/img/a468639.jpg'},
+  {id:641101, n:"Eggmania", a:"JoaoWictor2024", likes:10, cat:'Разное', tags:["Разное"], img:'/img/m641101.jpg', big:'/img/b641101.jpg', av:'/img/a641101.jpg'},
+  {id:717853, n:"Abilities Mighty And Ray", a:"ahmed1g3", likes:1, cat:'Персонажи', tags:["Персонажи"], img:'/img/m717853.jpg', big:'/img/b717853.jpg', av:'/img/a717853.jpg'},
+  {id:709851, n:"Movie Robotnik - EggTV Patch", a:"CreepBlaziken", likes:2, cat:'Зоны', tags:["Зоны"], img:'/img/m709851.jpg', big:'/img/b709851.jpg', av:'/img/a709851.jpg'},
+  {id:705600, n:"X1Got Moveset For Sonic in Sonic Mania", a:"X1Got", likes:3, cat:'Декомпиляция', tags:["Декомпиляция"], img:'/img/m705600.jpg', big:'/img/b705600.jpg', av:'/img/a705600.jpg'},
+  {id:697929, n:"Harder ERZ", a:"meowstudio", likes:0, cat:'Зоны', tags:["Зоны"], img:'/img/m697929.jpg', big:'/img/b697929.jpg', av:'/img/a697929.jpg'},
+  {id:697068, n:"Eggjanken Restored", a:"meowstudio", likes:0, cat:'Зоны', tags:["Зоны"], img:'/img/m697068.jpg', big:'/img/b697068.jpg', av:'/img/a697068.jpg'},
+  {id:696418, n:"love tester in sonic mania(decomp)", a:"meowstudio", likes:1, cat:'Зоны', tags:["Зоны"], img:'/img/m696418.jpg', big:'/img/b696418.jpg', av:'/img/a696418.jpg'}
+];
+const CATS = ['Все','Зоны','Скины','Интерфейс','Персонажи','Разное','Декомпиляция'];
+let installed = new Set([609081,468639,717853]);
+let cat = 'Все', query = '';
+
+/* ---------------- рендер каталога ---------------- */
+const cards = document.getElementById('cards');
+const chips = document.getElementById('chips');
+
+CATS.forEach((c, i) => {
+  const el = document.createElement('div');
+  el.className = 'chip' + (i === 0 ? ' on' : '');
+  el.textContent = c;
+  el.onclick = () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+    el.classList.add('on'); cat = c; render();
+  };
+  chips.appendChild(el);
+});
+
+function thumbEl(m){
+  if(m.img) return `<div class="thumb"><img src="${m.img}" alt="" loading="lazy"></div>`;
+  return `<div class="thumb"></div>`;
+}
+function tagRow(m){
+  return `<div class="tags">${m.tags.slice(0,2).map((t,i)=>`<span class="tag${i===0?' hot':''}">${t}</span>`).join('')}</div>`;
+}
+
+function render(){
+  cards.innerHTML = '';
+  const list = MODS.filter(m =>
+    (cat === 'Все' || m.cat === cat) &&
+    (!query || m.n.toLowerCase().includes(query) || m.a.toLowerCase().includes(query))
+  );
+  if(!list.length){
+    cards.innerHTML = `<div style="text-align:center;color:var(--text-3);font-size:13.5px;padding:40px 0">Ничего не нашлось</div>`;
+    return;
+  }
+  list.forEach(m => {
+    const on = installed.has(m.id);
+    const el = document.createElement('div');
+    el.className = 'mod';
+    el.innerHTML = `
+      ${thumbEl(m)}
+      <div class="info">
+        <div class="name">${m.n}</div>
+        <div class="meta">${m.a}<i>·</i>★ ${m.likes}</div>
+        ${tagRow(m)}
+      </div>
+      <button class="pill ${on ? 'done' : ''}" aria-label="${on ? 'Установлено' : 'Установить'}">
+        ${on
+          ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>'
+          : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>'}
+      </button>`;
+    el.querySelector('.pill').onclick = e => { e.stopPropagation(); openSheet(m); };
+    el.onclick = () => openSheet(m);
+    cards.appendChild(el);
+  });
+}
+document.getElementById('q').oninput = e => { query = e.target.value.trim().toLowerCase(); render(); };
+render();
+
+/* ---------------- мои моды ---------------- */
+function renderMine(){
+  const box = document.getElementById('mine');
+  box.innerHTML = '';
+  MODS.filter(m => installed.has(m.id)).forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'row';
+    el.innerHTML = `
+      <div class="grip"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg></div>
+      ${thumbEl(m)}
+      <div class="info">
+        <div class="name">${m.n}</div>
+        <div class="meta">${m.a}<i>·</i>${m.cat}</div>
+      </div>
+      <div class="sw on"></div>`;
+    el.querySelector('.sw').onclick = e => {
+      e.currentTarget.classList.toggle('on');
+      toast(e.currentTarget.classList.contains('on') ? 'Мод включён' : 'Мод выключен');
+    };
+    box.appendChild(el);
+  });
+  document.getElementById('mineCount').textContent = installed.size;
+}
+renderMine();
+
+/* ---------------- табы ---------------- */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.getElementById('p-' + t.dataset.p).classList.add('on');
+  document.getElementById('main').scrollTop = 0;
+});
+
+/* ---------------- шит установки ---------------- */
+const sheet = document.getElementById('sheet');
+const backdrop = document.getElementById('backdrop');
+const STEPS = ['Проверяем папку игры','Скачиваем архив','Распаковываем в mods/','Проверяем mod.ini'];
+let timer = null, current = null;
+
+function openSheet(m){
+  current = m;
+  document.getElementById('shName').textContent = m.n;
+  document.getElementById('shMeta').textContent = `${m.a} · ★ ${m.likes}`;
+  const t = document.getElementById('shThumb');
+  t.innerHTML = m.img ? `<img src="${m.img}" alt="">` : '';
+  document.getElementById('shShot').innerHTML = m.big ? `<img src="${m.big}" alt="">` : '';
+  document.getElementById('shAv').innerHTML =
+    (m.av ? `<img src="${m.av}" alt="">` : '') +
+    `<span style="color:var(--gold);font-weight:600">${m.tags.join(' · ')}</span>`;
+
+  const steps = document.getElementById('steps');
+  steps.innerHTML = STEPS.map(s => `<div class="step"><div class="ic"></div><span>${s}</span></div>`).join('');
+
+  // состояние 1: карточка мода + кнопка установить
+  document.getElementById('barLabel').style.display = 'none';
+  document.getElementById('barWrap').style.display = 'none';
+  steps.style.display = 'none';
+  const installBtn = document.getElementById('shInstall');
+  installBtn.style.display = 'flex';
+  installBtn.textContent = ''; installBtn.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg>Установить';
+  const done = document.getElementById('shDone');
+  done.style.display = 'none';
+  done.textContent = 'Отмена';
+
+  backdrop.classList.add('on');
+  sheet.classList.add('on');
+  clearInterval(timer);
+}
+
+function startInstall(){
+  const m = current; if(!m) return;
+  const steps = document.getElementById('steps');
+  document.getElementById('shInstall').style.display = 'none';
+  document.getElementById('barLabel').style.display = 'flex';
+  document.getElementById('barWrap').style.display = 'block';
+  steps.style.display = 'block';
+  const done = document.getElementById('shDone');
+  done.style.display = 'flex'; done.textContent = 'Отмена';
+
+  document.getElementById('barFill').style.width = '0%';
+  document.getElementById('barPct').textContent = '0%';
+  document.getElementById('barStage').textContent = 'Проверка папки';
+
+  clearInterval(timer);
+  let pct = 0, idx = 0;
+  const nodes = steps.querySelectorAll('.step');
+  nodes[0].classList.add('act');
+  const CHECK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>';
+
+  timer = setInterval(() => {
+    pct = Math.min(100, pct + 3 + Math.random() * 7);
+    document.getElementById('barFill').style.width = pct + '%';
+    document.getElementById('barPct').textContent = Math.round(pct) + '%';
+    const stage = Math.min(STEPS.length - 1, Math.floor(pct / 26));
+    if(stage !== idx){
+      idx = stage;
+      nodes.forEach((n, i) => {
+        n.classList.toggle('done', i < idx);
+        n.classList.toggle('act', i === idx);
+        n.querySelector('.ic').innerHTML = i < idx ? CHECK : '';
+      });
+      document.getElementById('barStage').textContent = ['Проверка папки','Скачивание','Распаковка','Проверка mod.ini'][idx];
+    }
+    if(pct >= 100){
+      clearInterval(timer);
+      nodes.forEach(n => {
+        n.classList.add('done'); n.classList.remove('act');
+        n.querySelector('.ic').innerHTML = CHECK;
+      });
+      document.getElementById('barStage').textContent = 'Готово';
+      if(m) installed.add(m.id);
+      render(); renderMine();
+      done.textContent = 'Закрыть';
+      setTimeout(() => { closeSheet(); toast('«' + m.n + '» установлен'); }, 700);
+    }
+  }, 160);
+}
+
+function closeSheet(){
+  clearInterval(timer);
+  sheet.classList.remove('on');
+  backdrop.classList.remove('on');
+}
+document.getElementById('shClose').onclick = closeSheet;
+document.getElementById('shInstall').onclick = startInstall;
+document.getElementById('shDone').onclick = closeSheet;
+backdrop.onclick = closeSheet;
+
+/* ---------------- прочее ---------------- */
+function toast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastText').textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('on'), 1900);
+}
+document.getElementById('pick').onclick = () => toast('Открываем выбор папки…');
+document.getElementById('rescan').onclick = () => toast('Папка проверена · всё на месте');
+
+/* ---------------- настройки ---------------- */
+const settingsEl = document.getElementById('settings');
+const gear = document.getElementById('gear');
+
+function openSettings(){ settingsEl.classList.add('on'); }
+function closeSettings(){ settingsEl.classList.remove('on'); }
+gear.onclick = openSettings;
+document.getElementById('back').onclick = closeSettings;
+
+// папка из настроек → экран «Папка»
+document.getElementById('rowFolder').onclick = () => {
+  closeSettings();
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  document.querySelector('.tab[data-p="folder"]').classList.add('on');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.getElementById('p-folder').classList.add('on');
+  toast('Открыта папка игры');
+};
+
+// переключатели
+document.querySelectorAll('[data-sw]').forEach(sw => {
+  sw.onclick = () => {
+    sw.classList.toggle('on');
+    toast(sw.classList.contains('on') ? 'Включено' : 'Выключено');
+  };
+});
+
+// тема
+document.querySelectorAll('#segTheme button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#segTheme button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    const mode = b.dataset.theme;
+    const dark = mode === 'auto'
+      ? !window.matchMedia('(prefers-color-scheme: light)').matches
+      : mode === 'dark';
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  };
+});
+
+// акцент
+const ACCENTS = [
+  {n:'Золото',   c:'#FFC94A', d:'#F0AF2A', l:'#FFD463', g:'255,201,74'},
+  {n:'Изумруд',  c:'#34D399', d:'#10A97B', l:'#6EE7B7', g:'52,211,153'},
+  {n:'Лазурь',   c:'#4F9CFF', d:'#2C6FE8', l:'#86BBFF', g:'79,156,255'},
+  {n:'Малина',   c:'#FF5C8A', d:'#E23A6B', l:'#FF92AE', g:'255,92,138'},
+  {n:'Лиловый',  c:'#A78BFA', d:'#7C5CF0', l:'#C4B2FF', g:'167,139,250'},
+  {n:'Графит',   c:'#C7CCD6', d:'#9AA3B2', l:'#E4E8EF', g:'199,204,214'}
+];
+const swBox = document.getElementById('swatches');
+ACCENTS.forEach((a, i) => {
+  const b = document.createElement('button');
+  b.className = 'swatch' + (i === 0 ? ' on' : '');
+  b.title = a.n;
+  b.innerHTML = `<i style="background:linear-gradient(180deg,${a.l},${a.d})"></i>`;
+  b.onclick = () => {
+    document.querySelectorAll('.swatch').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    const r = document.documentElement.style;
+    r.setProperty('--gold', a.c);
+    r.setProperty('--gold-2', a.d);
+    r.setProperty('--gold-l', a.l);
+    r.setProperty('--glow', `rgba(${a.g},.16)`);
+    r.setProperty('--gold-shadow', `rgba(${a.g},.5)`);
+    r.setProperty('--accent-soft', `rgba(${a.g},.12)`);
+    document.getElementById('accName').textContent = a.n;
+    toast('Акцент: ' + a.n);
+  };
+  swBox.appendChild(b);
+});
+
+// фон
+document.querySelectorAll('#bgTiles .tile').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('#bgTiles .tile').forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+    document.querySelector('.device').dataset.bg = t.dataset.bg;
+  };
+});
+
+// скругление
+document.querySelectorAll('#segRadius button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#segRadius button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--r-card', b.dataset.r + 'px');
+  };
+});
+
+/* ---------------- обход блокировки GameBanana ---------------- */
+const PROBE_IMG = 'https://images.gamebanana.com/img/ico/games/5ab8ba923ec04.png';
+const MIRRORS = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?url='
+];
+let bypassOn = true, bypassMode = 'auto';
+
+const swEl = document.getElementById('bypassSw');
+const bodyEl = document.getElementById('bypassBody');
+const subEl = document.getElementById('bypassSub');
+const modeSub = document.getElementById('bypassModeSub');
+const stEl = document.getElementById('bypassStatus');
+const stTx = document.getElementById('bypassStatusText');
+const hint = document.getElementById('bypassHint');
+
+const MODE_TEXT = {
+  auto:   'Авто — перебирает каналы и берёт первый живой',
+  doh:    'DoH — резолв через Cloudflare, мимо DNS провайдера',
+  mirror: 'Зеркало — запрос идёт через стороннюю прокси-читалку',
+  proxy:  'Свой прокси — локальный порт от VPN или byedpi'
+};
+
+function paintBypass(){
+  swEl.classList.toggle('on', bypassOn);
+  bodyEl.style.display = bypassOn ? 'block' : 'none';
+  hint.style.display = bypassOn ? 'none' : 'flex';
+  subEl.textContent = bypassOn
+    ? 'Включён · канал: ' + ({auto:'авто',doh:'DoH',mirror:'зеркало',proxy:'прокси'})[bypassMode]
+    : 'GameBanana в РФ режется провайдером';
+  modeSub.textContent = MODE_TEXT[bypassMode];
+  document.getElementById('proxyRow').style.display = bypassMode === 'proxy' ? 'block' : 'none';
+}
+swEl.onclick = () => { bypassOn = !bypassOn; paintBypass(); if (bypassOn) probeBypass(); };
+document.getElementById('bhBtn').onclick = () => {
+  bypassOn = true; paintBypass(); toast('Обход включён'); probeBypass();
+};
+document.querySelectorAll('#segBypass button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#segBypass button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); bypassMode = b.dataset.m; paintBypass();
+  };
+});
+document.getElementById('bypassCheck').onclick = () => probeBypass();
+
+function setStatus(cls, text){
+  stEl.className = 'status-line' + (cls ? ' ' + cls : '');
+  stTx.textContent = text;
+}
+
+function loadImg(url, ms){
+  return new Promise(res => {
+    const t = setTimeout(() => { done(false); }, ms);
+    const im = new Image();
+    let finished = false;
+    function done(v){ if (finished) return; finished = true; clearTimeout(t); res(v); }
+    im.onload = () => done(true);
+    im.onerror = () => done(false);
+    im.src = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+  });
+}
+
+async function probeBypass(){
+  if (stEl.classList.contains('busy')) return;
+  setStatus('busy', 'Проверяем каналы…');
+  const t0 = performance.now();
+  // 1) напрямую
+  if (await loadImg(PROBE_IMG, 4000)) {
+    setStatus('ok', 'Работает напрямую · ' + Math.round(performance.now() - t0) + ' мс');
+    return;
+  }
+  // 2) зеркала
+  for (const m of MIRRORS) {
+    const t1 = performance.now();
+    if (await loadImg(m + encodeURIComponent(PROBE_IMG), 6000)) {
+      const host = new URL(m).host;
+      setStatus('ok', 'GameBanana доступен через ' + host + ' · ' + Math.round(performance.now() - t1) + ' мс');
+      return;
+    }
+  }
+  setStatus('bad', 'Ни один канал не ответил — нужен свой прокси');
+}
+paintBypass();
+
+/* ---------------- язык интерфейса ---------------- */
+const I18N = {
+  ru: {catalog:'Каталог', mine:'Мои', folder:'Папка', settings:'Настройки', search:'Поиск модов'},
+  en: {catalog:'Catalog', mine:'My mods', folder:'Folder', settings:'Settings', search:'Search mods'},
+  be: {catalog:'Каталог', mine:'Мае моды', folder:'Папка', settings:'Налады', search:'Пошук модаў'},
+  kk: {catalog:'Каталог', mine:'Менің модтарым', folder:'Қалта', settings:'Параметрлер', search:'Модтарды іздеу'},
+  de: {catalog:'Katalog', mine:'Meine Mods', folder:'Ordner', settings:'Einstellungen', search:'Mods suchen'},
+  fr: {catalog:'Catalogue', mine:'Mes mods', folder:'Dossier', settings:'Paramètres', search:'Rechercher'},
+  es: {catalog:'Catálogo', mine:'Mis mods', folder:'Carpeta', settings:'Ajustes', search:'Buscar mods'},
+  pt: {catalog:'Catálogo', mine:'Meus mods', folder:'Pasta', settings:'Configurações', search:'Buscar mods'},
+  it: {catalog:'Catalogo', mine:'I miei mod', folder:'Cartella', settings:'Impostazioni', search:'Cerca mod'},
+  pl: {catalog:'Katalog', mine:'Moje mody', folder:'Folder', settings:'Ustawienia', search:'Szukaj modów'},
+  tr: {catalog:'Katalog', mine:'Modlarım', folder:'Klasör', settings:'Ayarlar', search:'Mod ara'},
+  zh: {catalog:'目录', mine:'我的模组', folder:'文件夹', settings:'设置', search:'搜索模组'},
+  ja: {catalog:'カタログ', mine:'マイMOD', folder:'フォルダ', settings:'設定', search:'MODを検索'},
+  ko: {catalog:'카탈로그', mine:'내 모드', folder:'폴더', settings:'설정', search:'모드 검색'},
+  ar: {catalog:'الكتالوج', mine:'موداتي', folder:'المجلد', settings:'الإعدادات', search:'بحث'}
+};
+let lang = 'ru';
+
+function applyLang(){
+  const t = I18N[lang] || I18N.ru;
+  const tabs = document.querySelectorAll('.tab span');
+  const order = ['catalog','mine','folder'];
+  tabs.forEach((el, i) => { if (order[i]) el.textContent = t[order[i]]; });
+  const q = document.getElementById('q');
+  if (q) q.placeholder = t.search;
+  document.querySelectorAll('.set-title').forEach(el => el.textContent = t.settings);
+  const h1c = document.querySelector('#p-catalog h1'); if (h1c) h1c.textContent = t.catalog;
+  const h1f = document.querySelector('#p-folder h1'); if (h1f) h1f.textContent = t.folder;
+}
+
+document.querySelectorAll('.lang-tile').forEach(tile => {
+  tile.onclick = () => {
+    document.querySelectorAll('.lang-tile').forEach(x => {
+      x.classList.remove('on');
+      const chk = x.querySelector('.lang-check'); if (chk) chk.style.display = 'none';
+    });
+    tile.classList.add('on');
+    const chk = tile.querySelector('.lang-check'); if (chk) chk.style.display = 'block';
+    lang = tile.dataset.lang === 'auto' ? 'ru' : tile.dataset.lang;
+    applyLang();
+    toast('Язык: ' + (I18N[lang] ? lang.toUpperCase() : 'RU'));
+  };
+});
+applyLang();
+
+</script>
+</body>
+</html>

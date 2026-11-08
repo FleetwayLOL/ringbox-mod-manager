@@ -1,0 +1,10 @@
+/* ===== LIVE-режим: на телефоне приложение занимает весь экран ===== */
+@media (max-width:560px), (max-height:920px){
+  body{padding:0;display:block;background:var(--bg)}
+  .device{width:100vw;height:100dvh;border:0;border-radius:0;box-shadow:none}
+  .device::before{top:-200px}
+  .status{padding-top:calc(12px + env(safe-area-inset-top))}
+  .set-head{padding-top:calc(42px + env(safe-area-inset-top))}
+  .tabbar{bottom:calc(16px + env(safe-area-inset-bottom))}
+  .page{padding-bottom:110px}
+}
